@@ -48,7 +48,7 @@ morganBody(app, {
   logReqDateTime: true,
 });
 // Connect To Database
-connectDB();
+// connectDB();
 
 
 app.get("/", (req, res) => {
@@ -71,9 +71,26 @@ app.use(API_PreFix, ActivityRouters);
 
 // Hunt Routes
 
-
-
+const start = () => {
+  connectDB()
+    .then(() => {
+      console.log("MongoDB connected successfully");
+    })
+    .catch((err) => {
+      console.error("MongoDB connection error:", err);
+    });
+  app.get("/", async(req, res) => {
+    res.status(200).json("Api ready to use");
+  });
+  
 app.use(ResHandler);
-app.listen(3000,()=>{
- console.log("running")
-})
+};
+start();
+app.listen(3000, () => {
+  console.log(`connection is live to this port ${3000}`);
+});
+
+
+
+
+
