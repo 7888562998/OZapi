@@ -22,7 +22,7 @@ import { ActivityRouters } from "./src/Router/ActivityRouters.js";
 export const filename = fileURLToPath(import.meta.url);
 export const dirname = path.dirname(filename);
 
-export let app = express();
+const app = express();
 const port = process.env.PORT || 3050;
 
 
@@ -78,3 +78,4 @@ app.listen(port, () => {
   console.log(`connection is live to this port ${port}`);
 });
 
+export default app;
