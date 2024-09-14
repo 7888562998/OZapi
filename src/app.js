@@ -1,6 +1,6 @@
  import { createServer} from "https";
 import fs from "fs"
-import { app } from "./index.js";
+import { app } from "../index.js";
 
 
 const port = process.env.PORT || 3050;

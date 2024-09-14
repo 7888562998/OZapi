@@ -7,15 +7,15 @@ import morganBody from "morgan-body";
 import path from "path";
 import { fileURLToPath } from "url";
 // DB Connection
-import { connectDB } from "./DB/index.js";
+import { connectDB } from "./src/DB/index.js";
 // Routes
-import { AuthRouters } from "./Router/AuthRouters.js";
+import { AuthRouters } from "./src/Router/AuthRouters.js";
 
 // Response Handler
-import { AdminRouters } from "./Router/AdminRouters.js";
+import { AdminRouters } from "./src/Router/AdminRouters.js";
 
-import { ResHandler } from "./Utils/ResponseHandler/ResHandler.js";
-import { ActivityRouters } from "./Router/ActivityRouters.js";
+import { ResHandler } from "./src/Utils/ResponseHandler/ResHandler.js";
+import { ActivityRouters } from "./src/Router/ActivityRouters.js";
 
 
 
@@ -74,3 +74,6 @@ app.use(API_PreFix, ActivityRouters);
 
 
 app.use(ResHandler);
+app.listen(3000,()=>{
+ console.log("running")
+})
