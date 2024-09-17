@@ -16,7 +16,7 @@ export const tokenGen = async (user, tokenType) => {
     .setIssuedAt(new Date().getTime())
     .setIssuer(endpoint)
     .setAudience(endpoint)
-    .setExpirationTime(tokenType === "refresh" ? "30d" : "2d")
+    .setExpirationTime(tokenType === "refresh" ? "30d" : "1d")
     .encrypt(publicKey);
 };
 
