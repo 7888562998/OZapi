@@ -183,39 +183,39 @@ const CreateAudit = async (req, res, next) => {
 
     let Documents = [];
     let Recording = [];
-    if (req.files['Documents']) {
-      // Process 'file' upload if it exists in the request
-      const file = req.files['Documents'];
-      for (const el of file) {
-        console.log(el, "File Documents")
-        const FileUploadModel = await fileUploadModel.create({
-          file: el.filename,
-          fileType: el.mimetype,
-          user: user._id,
-        });
-        Documents.push(FileUploadModel._id);
+    // if (req.files['Documents']) {
+    //   // Process 'file' upload if it exists in the request
+    //   const file = req.files['Documents'];
+    //   for (const el of file) {
+    //     console.log(el, "File Documents")
+    //     const FileUploadModel = await fileUploadModel.create({
+    //       file: el.filename,
+    //       fileType: el.mimetype,
+    //       user: user._id,
+    //     });
+    //     Documents.push(FileUploadModel._id);
 
-      }
+    //   }
 
-    }
+    // }
 
-    if (req.files['Recording']) {
-      const RecordingFile = req.files['Recording'];
-
-
-      for (const el of RecordingFile) {
-        const FileUploadModel = await fileUploadModel.create({
-          file: el.filename,
-          fileType: el.mimetype,
-          user: user._id,
-        });
-        Recording.push(FileUploadModel._id);
-
-      }
+    // if (req.files['Recording']) {
+    //   const RecordingFile = req.files['Recording'];
 
 
+    //   for (const el of RecordingFile) {
+    //     const FileUploadModel = await fileUploadModel.create({
+    //       file: el.filename,
+    //       fileType: el.mimetype,
+    //       user: user._id,
+    //     });
+    //     Recording.push(FileUploadModel._id);
 
-    }
+    //   }
+
+
+
+    // }
 
 
 
