@@ -124,7 +124,7 @@ const CreatePreAudit = async (req, res, next) => {
 
 
 const CreateAudit = async (req, res, next) => {
-
+console.log(req.body,"create-audit");
   try {
     const { user } = req
     const {
@@ -218,7 +218,7 @@ const CreateAudit = async (req, res, next) => {
     // }
 
 
-
+    console.log("call-audit");
     const Audit = await AuditModel.create({
 
       user: user._id,
