@@ -504,16 +504,14 @@ const MatchPreAuditAndAudit = async (req, res) => {
 };
 const getAllCases = async (req, res) => {
 
-
-
-
   try {
 
     const user = req.user
     console.log(user, "USER")
     const cases = await PreAuditModel.aggregate([
       { $match: { user: user._id } },
-      { $group: { _id: { caseNumber: "$caseNumber" } } }
+      { $group: { _id: { caseNumber: "$caseNumber" } } },
+      { $sort: { "_id.caseNumber": -1 } }
     ])
 
 

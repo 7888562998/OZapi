@@ -216,15 +216,23 @@ const getActivitybyRoles = async (req, res) => {
   try {
     const { IndustryID, RoleID } = req.body;
 
-    const getActivity = await ActivityModel.find({ RoleID, IndustryID });
+    const getActivity = await ActivityModel.find({ RoleID, IndustryID }).sort({ title: 1 });
 
-
+    const formattedGetActivity = getActivity.map((industry) => {
+      return {
+        ...industry._doc,
+        title: industry.title
+          .split(' ')
+          .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+          .join(' '),
+      };
+    });
 
 
     return res.status(201).json({
       status: 1,
       message: 'Activity Retrived successfully',
-      data: getActivity,
+      data: formattedGetActivity,
     });
   } catch (error) {
     console.log(error);
@@ -285,18 +293,29 @@ const getAllIndustries = async (req, res) => {
 
 const getIndustries = async (req, res) => {
   try {
-    const Industries = await IndustryModel.find();
+    const Industries = await IndustryModel.find().sort({ title: 1 });
+
+    const formattedIndustries = Industries.map((industry) => {
+      return {
+        ...industry._doc,
+        title: industry.title
+          .split(' ')
+          .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+          .join(' '),
+      };
+    });
 
     return res.status(200).json({
       status: 1,
       message: 'Industries retrieved successfully',
-      data: Industries,
+      data: formattedIndustries,
     });
   } catch (error) {
     console.log(error);
     return res.status(400).json({ status: 0, message: error.message });
   }
 }
+
 
 
 const getAllRoles = async (req, res) => {
@@ -322,12 +341,20 @@ const getAllRoles = async (req, res) => {
 const getRolesbyID = async (req, res) => {
   try {
     const { IndustryID } = req.body
-    const Roles = await RoleModel.find({ IndustryID }).populate('IndustryID');
-
+    const Roles = await RoleModel.find({ IndustryID }).populate('IndustryID').sort({ title: 1 });
+    const formattedRoles = Roles.map((role) => {
+      return {
+        ...role._doc,
+        title: role.title
+          .split(' ')
+          .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+          .join(' '),
+      };
+    });
     return res.status(200).json({
       status: 1,
       message: 'Roles retrieved successfully',
-      data: Roles,
+      data: formattedRoles,
     });
   } catch (error) {
     console.log(error);
