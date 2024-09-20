@@ -20,8 +20,8 @@ export const keyGenenerator = async () => {
     modulusLength: 2048,
     crv: "P-256",
   });
-  // fs.writeFileSync("./privateKey.pem", await jose.exportPKCS8(secret.privateKey));
-  // fs.writeFileSync("./publicKey.pem", await jose.exportSPKI(secret.publicKey));
+  fs.writeFileSync("./privateKey.pem", await jose.exportPKCS8(secret.privateKey));
+  fs.writeFileSync("./publicKey.pem", await jose.exportSPKI(secret.publicKey));
   return secret;
 };
 
