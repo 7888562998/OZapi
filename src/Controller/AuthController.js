@@ -745,9 +745,20 @@ const getProfile = async (req, res, next) => {
       ])
     )[0];
 
+    const totalUsersResult = await authModel.aggregate([
+      { $match: { userType: 'user' } },
+      { $count: 'totalUsers' }
+    ]);
+
+    const totalUsers = totalUsersResult.length > 0 ? totalUsersResult[0].totalUsers : 0;
+
+
     return next(
       CustomSuccess.createSuccess(
-        AuthModel,
+        {
+          ...AuthModel,       
+          totalUsers,
+        },
         "User Information get Successfull",
         200
       )
