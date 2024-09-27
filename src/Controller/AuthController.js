@@ -747,7 +747,7 @@ const getProfile = async (req, res, next) => {
 
     const totalUsersResult = await authModel.aggregate([
       { $match: { userType: 'user' } },
-      { $count: 'totalUsers' }
+      { $count: 'totalUsers' },
     ]);
 
     const totalUsers = totalUsersResult.length > 0 ? totalUsersResult[0].totalUsers : 0;
