@@ -28,6 +28,8 @@ import { tokenGen } from "../Utils/AccessTokenManagement/Tokens.js";
 import OtpModel from "../DB/Model/otpModel.js";
 import { genSalt } from "../Utils/saltGen.js";
 import { Types } from "mongoose";
+import AuditModel from "../DB/Model/AuditModel.js";
+import IndustryModel from "../DB/Model/industryModel.js";
 
 
 const SocialLoginUser = async (req, res, next) => {
@@ -745,6 +747,9 @@ const getProfile = async (req, res, next) => {
       ])
     )[0];
 
+    const totalAudits = await AuditModel.find().count();
+    const totalIndustries = await IndustryModel.find().count();
+
     const totalUsersResult = await authModel.aggregate([
       { $match: { userType: 'user' } },
       { $count: 'totalUsers' },
@@ -758,6 +763,9 @@ const getProfile = async (req, res, next) => {
         {
           ...AuthModel,       
           totalUsers,
+          totalAudits,
+          totalIndustries,
+          totalAnalysis:0,
         },
         "User Information get Successfull",
         200
