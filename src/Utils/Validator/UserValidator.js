@@ -36,6 +36,7 @@ export const updatevalidator = joi.object({
   password: joi.string().allow(null),
   name: joi.string().allow(null),
   notificationOn: joi.boolean(),
+  userType: joi.string().allow(null),
 });
 
 export const createprofilevalidator = joi.object({
