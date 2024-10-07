@@ -11,6 +11,7 @@ export let AuthRouters = Router();
 
 
 AuthRouters.route("/login").post(AuthController.LoginUser);
+AuthRouters.route("/signUp").post(AuthController.SignUp);
 AuthRouters.route("/forgetpassword").post(AuthController.forgetPassword);
 AuthRouters.route("/sociallogin").post(AuthController.SocialLoginUser);
 
