@@ -3,19 +3,19 @@ import { hashPassword } from "../../Utils/SecuringPassword.js";
 
 const AuthSchema = mongoose.Schema(
   {
-   currentCase:{
-type:Number,
-default:0
-   },
+    currentCase: {
+      type: Number,
+      default: 0,
+    },
     isCompleted: {
       type: Boolean,
       required: true,
-      default:false
+      default: false,
     },
     isVerified: {
       type: Boolean,
       required: false,
-      default:false
+      default: false,
     },
 
     email: {
@@ -33,7 +33,7 @@ default:0
       type: String,
       trim: true,
       required: false,
-      //unique: true,      
+      //unique: true,
     },
     code: {
       type: String,
@@ -56,12 +56,16 @@ default:0
       default: "user",
       required: true,
     },
-
+    role: {
+      type: String,
+      enum: ["manager", "employee"],
+      default: "user",
+      required: false,
+    },
     isDeleted: {
       type: Boolean,
       default: false,
     },
-
     notificationOn: {
       type: Boolean,
       default: true,

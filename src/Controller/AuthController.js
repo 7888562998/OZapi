@@ -809,8 +809,36 @@ const getProfile = async (req, res, next) => {
   }
 };
 
-
-
+const getComapnyManager = async (req, res) => {
+  try {
+    const { companyId } = req.params;
+    const users = (
+      await authModel.aggregate([
+        {
+          $match: { companyId: new mongoose.Types.ObjectId(companyId.toString()),role: "manager" },    
+        },
+        {
+          $project: {
+            _id: 1, // Include the _id field
+            name: 1, // Include the name field
+          },
+        },
+      ])
+    );
+    res.status(200).json({
+      success: true,
+      message: "Company manager fetched successfully",
+      data: users
+    });
+  } catch (error) {
+    // Handle any errors
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch company manager",
+      error: error.message
+    });
+  }
+};
 const forgetPassword = async (req, res, next) => {
   try {
     const { error } = forgetpasswordValidator.validate(req.body);
@@ -1155,6 +1183,7 @@ const AuthController = {
     updateUser
   ],
   getProfile,
+  getComapnyManager,
   // changePassword,
   forgetPassword,
   VerifyOtp,
