@@ -30,6 +30,7 @@ import { genSalt } from "../Utils/saltGen.js";
 import { Types } from "mongoose";
 import AuditModel from "../DB/Model/AuditModel.js";
 import IndustryModel from "../DB/Model/industryModel.js";
+import CompanyModel from "../DB/Model/companyModel.js";
 
 
 const SocialLoginUser = async (req, res, next) => {
@@ -620,92 +621,92 @@ const LoginUser = async (req, res, next) => {
       return next(CustomError.badRequest("Invalid Password"));
     }
 
-  //   if (AuthModel.isVerified == false) {
+    //   if (AuthModel.isVerified == false) {
 
-  //     const findOtp = await OtpModel.findOne({auth: new mongoose.Types.ObjectId(AuthModel._id.toString()), reason:'login'})
-  //     if(findOtp){
-  //       await OtpModel.findByIdAndDelete(findOtp._id)
-  //     }
-  //     let otp = Math.floor(Math.random() * 90000) + 100000;
-  //   console.log(otp, "LOGIN OTP")
-    
-  //   const otpCreated = await OtpModel.create({
-  //     auth: new mongoose.Types.ObjectId(AuthModel._id.toString()),
-  //     otpKey: otp.toString(),
-  //     reason: 'login'
-  //   })
+    //     const findOtp = await OtpModel.findOne({auth: new mongoose.Types.ObjectId(AuthModel._id.toString()), reason:'login'})
+    //     if(findOtp){
+    //       await OtpModel.findByIdAndDelete(findOtp._id)
+    //     }
+    //     let otp = Math.floor(Math.random() * 90000) + 100000;
+    //   console.log(otp, "LOGIN OTP")
 
-  //   const createdOTP = await otpCreated.save()
-  //   console.log(createdOTP, "createdOTP")
-  //   const emailData = {
-  //     subject: "Aldebaran - Account Verification",
-  //     html: `
-  // <div
-  //   style = "padding:20px 20px 40px 20px; position: relative; overflow: hidden; width: 100%;"
-  // >
-  //   <img 
-  //         style="
-  //         top: 0;position: absolute;z-index: 0;width: 100%;height: 100vmax;object-fit: cover;" 
-  //         src="cid:background" alt="background" 
-  //   />
-  //   <div style="z-index:1; position: relative;">
-  //   <header style="padding-bottom: 20px">
-  //     <div class="logo" style="text-align:center;">
-  //       <img 
-  //         style="width: 150px;" 
-  //         src="cid:logo" alt="logo" />
-  //     </div>
-  //   </header>
-  //   <main 
-  //     style= "padding: 20px; background-color: #f5f5f5; border-radius: 10px; width: 80%; margin: 0 auto; margin-bottom: 20px; font-family: 'Poppins', sans-serif;"
-  //   >
-  //     <h1 
-  //       style="color: #FD6F3B; font-size: 30px; font-weight: 700;"
-  //     >Welcome To Aldebaran</h1>
-  //     <p
-  //       style="font-size: 24px; text-align: left; font-weight: 500; font-style: italic;"
-  //     >Hi ${AuthModel.name},</p>
-  //     <p 
-  //       style="font-size: 20px; text-align: left; font-weight: 500;"
-  //     > Please use the following OTP to reset your password.</p>
-  //     <h2
-  //       style="font-size: 36px; font-weight: 700; padding: 10px; width:100%; text-align:center;color: #FD6F3B; text-align: center; margin-top: 20px; margin-bottom: 20px;"
-  //     >${otp}</h2>
-  //     <p style = "font-size: 16px; font-style:italic; color: #343434">If you did not request this email, kindly ignore this. If this is a frequent occurence <a
-  //     style = "color: #FD6F3B; text-decoration: none; border-bottom: 1px solid #FD6F3B;" href = "#"
-  //     >let us know.</a></p>
-  //     <p style = "font-size: 20px;">Regards,</p>
-  //     <p style = "font-size: 20px;">Dev Team</p>
-  //   </main>
-  //   </div>
-  // <div>
-  // `,
-  //     attachments: [
-  //       {
-  //         filename: "logo.png",
-  //         path: "./assets/logo.png",
-  //         cid: "logo",
-  //         contentDisposition: "inline",
-  //       },
-  //       // {
-  //       //   filename: "bg.png",
-  //       //   path: "./Uploads/bg.png",
-  //       //   cid: "background",
-  //       //   contentDisposition: "inline",
-  //       // },
-  //     ],
-  //   };
-  //   sendEmails(
-  //     email,
-  //     emailData.subject,
-  //     emailData.html,
-  //     emailData.attachments
-  //   );
+    //   const otpCreated = await OtpModel.create({
+    //     auth: new mongoose.Types.ObjectId(AuthModel._id.toString()),
+    //     otpKey: otp.toString(),
+    //     reason: 'login'
+    //   })
+
+    //   const createdOTP = await otpCreated.save()
+    //   console.log(createdOTP, "createdOTP")
+    //   const emailData = {
+    //     subject: "Aldebaran - Account Verification",
+    //     html: `
+    // <div
+    //   style = "padding:20px 20px 40px 20px; position: relative; overflow: hidden; width: 100%;"
+    // >
+    //   <img 
+    //         style="
+    //         top: 0;position: absolute;z-index: 0;width: 100%;height: 100vmax;object-fit: cover;" 
+    //         src="cid:background" alt="background" 
+    //   />
+    //   <div style="z-index:1; position: relative;">
+    //   <header style="padding-bottom: 20px">
+    //     <div class="logo" style="text-align:center;">
+    //       <img 
+    //         style="width: 150px;" 
+    //         src="cid:logo" alt="logo" />
+    //     </div>
+    //   </header>
+    //   <main 
+    //     style= "padding: 20px; background-color: #f5f5f5; border-radius: 10px; width: 80%; margin: 0 auto; margin-bottom: 20px; font-family: 'Poppins', sans-serif;"
+    //   >
+    //     <h1 
+    //       style="color: #FD6F3B; font-size: 30px; font-weight: 700;"
+    //     >Welcome To Aldebaran</h1>
+    //     <p
+    //       style="font-size: 24px; text-align: left; font-weight: 500; font-style: italic;"
+    //     >Hi ${AuthModel.name},</p>
+    //     <p 
+    //       style="font-size: 20px; text-align: left; font-weight: 500;"
+    //     > Please use the following OTP to reset your password.</p>
+    //     <h2
+    //       style="font-size: 36px; font-weight: 700; padding: 10px; width:100%; text-align:center;color: #FD6F3B; text-align: center; margin-top: 20px; margin-bottom: 20px;"
+    //     >${otp}</h2>
+    //     <p style = "font-size: 16px; font-style:italic; color: #343434">If you did not request this email, kindly ignore this. If this is a frequent occurence <a
+    //     style = "color: #FD6F3B; text-decoration: none; border-bottom: 1px solid #FD6F3B;" href = "#"
+    //     >let us know.</a></p>
+    //     <p style = "font-size: 20px;">Regards,</p>
+    //     <p style = "font-size: 20px;">Dev Team</p>
+    //   </main>
+    //   </div>
+    // <div>
+    // `,
+    //     attachments: [
+    //       {
+    //         filename: "logo.png",
+    //         path: "./assets/logo.png",
+    //         cid: "logo",
+    //         contentDisposition: "inline",
+    //       },
+    //       // {
+    //       //   filename: "bg.png",
+    //       //   path: "./Uploads/bg.png",
+    //       //   cid: "background",
+    //       //   contentDisposition: "inline",
+    //       // },
+    //     ],
+    //   };
+    //   sendEmails(
+    //     email,
+    //     emailData.subject,
+    //     emailData.html,
+    //     emailData.attachments
+    //   );
 
 
 
-  //     return next(CustomError.badRequest("User Not Verified"));
-  //   }
+    //     return next(CustomError.badRequest("User Not Verified"));
+    //   }
 
     const device = await linkUserDevice(AuthModel._id, deviceToken, deviceType);
     if (device.error) {
@@ -732,7 +733,7 @@ const LoginUser = async (req, res, next) => {
 
 const SignUp = async (req, res) => {
   try {
-    const { email, password, name, userType } = req.body;
+    const { email, password, name, userType, companyId } = req.body;
 
     const existingUser = await authModel.findOne({ email });
     if (existingUser) {
@@ -749,6 +750,7 @@ const SignUp = async (req, res) => {
       userType,
       isVerified: false,
       isCompleted: false,
+      companyId
     });
 
     await newUser.save();
@@ -765,13 +767,38 @@ const SignUp = async (req, res) => {
   }
 };
 
+const getCompanies = async (req, res, next) => {
+  try {
+    const companies = await CompanyModel.find().sort({ companyName: 1 });
+
+    console.log('company', companies);
+    const formattedCompanies = companies.map((companies) => {
+      return {
+        ...companies._doc,
+        companyName: companies.companyName
+          .split(' ')
+          .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+          .join(' '),
+      };
+    });
+
+    return res.status(200).json({
+      status: 1,
+      message: 'Companies retrieved successfully',
+      data: formattedCompanies,
+    });
+  } catch (error) {
+    console.log(error);
+    return res.status(400).json({ status: 0, message: error.message });
+  }
+}
 
 const getProfile = async (req, res, next) => {
   try {
     const { user } = req;
     console.log("NEW", user._id)
-    const AuthModel = (
-      await authModel.aggregate([
+    const CompaniesModel = (
+      await companiesModel.aggregate([
         {
           $match: { _id: new mongoose.Types.ObjectId(user._id.toString()) },
         },
@@ -794,11 +821,11 @@ const getProfile = async (req, res, next) => {
     return next(
       CustomSuccess.createSuccess(
         {
-          ...AuthModel,       
+          ...AuthModel,
           totalUsers,
           totalAudits,
           totalIndustries,
-          totalAnalysis:0,
+          totalAnalysis: 0,
         },
         "User Information get Successfull",
         200
@@ -1095,8 +1122,8 @@ const resetExistingPassword = async (req, res, next) => {
     // if (req.user.devices[req.user.devices.length - 1].deviceToken != devicetoken) {
     //   return next(CustomError.createError("Invalid device access", 200));
     // }
-    const user = await authModel.findOne({email:email})
-    if(!user){
+    const user = await authModel.findOne({ email: email })
+    if (!user) {
       return next(CustomError.createError("User not found", 400));
 
     }
@@ -1104,7 +1131,7 @@ const resetExistingPassword = async (req, res, next) => {
 
     const isPasswordCorrect = comparePassword(oldPassword, user.password)
     console.log(isPasswordCorrect, "isPasswordCorrect")
-    if(!isPasswordCorrect){
+    if (!isPasswordCorrect) {
       return next(CustomError.createError("Old password is not correct", 400));
 
     }
@@ -1161,7 +1188,7 @@ const AuthController = {
   resetpassword,
   logout,
   SocialLoginUser,
-
+  getCompanies,
 };
 
 export default AuthController;
