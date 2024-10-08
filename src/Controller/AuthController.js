@@ -797,8 +797,8 @@ const getProfile = async (req, res, next) => {
   try {
     const { user } = req;
     console.log("NEW", user._id)
-    const CompaniesModel = (
-      await companiesModel.aggregate([
+    const AuthModel = (
+      await authModel.aggregate([
         {
           $match: { _id: new mongoose.Types.ObjectId(user._id.toString()) },
         },
