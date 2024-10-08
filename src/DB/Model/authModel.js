@@ -66,6 +66,11 @@ default:0
       type: Boolean,
       default: true,
     },
+    companyId: {
+        type: mongoose.Schema.Types.ObjectId,
+        required: true,
+    },
+
     devices: [
       {
         type: mongoose.Schema.Types.ObjectId,
