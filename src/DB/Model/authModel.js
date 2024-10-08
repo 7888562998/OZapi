@@ -59,7 +59,7 @@ const AuthSchema = mongoose.Schema(
     role: {
       type: String,
       enum: ["manager", "employee"],
-      default: "user",
+      default: "employee",
       required: false,
     },
     isDeleted: {
