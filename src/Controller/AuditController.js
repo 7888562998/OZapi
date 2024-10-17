@@ -122,6 +122,67 @@ const CreatePreAudit = async (req, res, next) => {
   }
 };
 
+const CreateStartStudy = async (req, res, next) => {
+  try {
+    const { user } = req;
+
+    const { preAuditDataArray } = req.body;
+    console.log("preAuditDataArray", preAuditDataArray);
+    // const validMinutes = 540; // 9 hours shift
+
+    // let totalMinutes = preAuditDataArray.reduce((acc, obj) => {
+    //   return acc + (getTotalMinutes(obj.StartTime, obj.EndTime) || 0);
+    // }, 0);
+    // if (totalMinutes > validMinutes) {
+    //   return res
+    //     .status(400)
+    //     .json({
+    //       status: 0,
+    //       message: "Total pre audit minutes should be less than 9 hours",
+    //     });
+    // }
+    // console.log(totalMinutes, "Pre audit minutes");
+
+    const findCaseNumber = await CaseNumberModel.findOne().sort("-caseNumber");
+    const newCase = await CaseNumberModel.create({
+      caseNumber: findCaseNumber ? findCaseNumber.caseNumber + 1 : 1,
+    });
+
+    // Assuming req.body is an array of PreAudit data
+
+    const preAuditInstances = [];
+
+    for (const preAuditData of preAuditDataArray) {
+      const { ActivityID, totalTime } = preAuditData;
+
+      const PreAudit = await PreAuditModel.create({
+        user: user._id,
+        ActivityID,
+        caseNumber: newCase.caseNumber,
+        totalTime,
+      });
+
+      preAuditInstances.push(PreAudit);
+    }
+
+    await authModel.findByIdAndUpdate(
+      user._id,
+      { currentCase: newCase.caseNumber },
+      {
+        new: true,
+      }
+    );
+    return res.status(200).json({
+      status: 1,
+      message: "Pre-Audit(s) created successfully",
+      caseNumber: newCase.caseNumber,
+      data: preAuditInstances,
+    });
+  } catch (error) {
+    console.error(error);
+    return res.status(400).json({ status: 0, message: error.message });
+  }
+};
 
 const CreateAudit = async (req, res, next) => {
 console.log(req.body,"create-audit");
@@ -344,6 +405,7 @@ const getActivityforCase = async (req, res, next) => {
 
 const AuditController = {
   CreatePreAudit,
+  CreateStartStudy,
   CreateNonValueAdded,
   CreateAudit: [
     handleMultipartData.fields([

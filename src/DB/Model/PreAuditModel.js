@@ -7,33 +7,36 @@ const PreAuditSchema = new mongoose.Schema(
       required: true,
       ref: "auth",
     },
-    description: {
-      type: String,
-      
-      lowercase: false
-    },
-    ActivityID:{
+    // description: {
+    //   type: String,
+
+    //   lowercase: false
+    // },
+    ActivityID: {
       type: mongoose.Schema.Types.ObjectId,
       required: false,
       ref: "Activity",
-  },
-  caseNumber:{
-    type: Number,
-  },
-StartTime:{
-  type: String,
-  required: true,
-},
-EndTime:{
-  type: String,
-  required: true,
-},
-EstimatedPer:{
-  type: String,
-  required: true,
-  default: '100%'
-},
-  
+    },
+    caseNumber: {
+      type: Number,
+    },
+    totalTime: {
+      type: String,
+      lowercase: false,
+    },
+    // StartTime:{
+    //   type: String,
+    //   required: true,
+    // },
+    // EndTime:{
+    //   type: String,
+    //   required: true,
+    // },
+    // EstimatedPer:{
+    //   type: String,
+    //   required: true,
+    //   default: '100%'
+    // },
   },
   {
     timestamps: true,
