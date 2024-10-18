@@ -1,4 +1,3 @@
-
 import CustomError from "../Utils/ResponseHandler/CustomError.js";
 import CustomSuccess from "../Utils/ResponseHandler/CustomSuccess.js";
 import fileUploadModel from "../DB/Model/fileUploadModel.js";
@@ -22,7 +21,7 @@ const validateItemFormat = (item) => {
   const idSet = new Set(); // To check for unique "id" values
 
   for (const task of item) {
-    if (typeof task === 'object' && 'id' in task && 'task' in task) {
+    if (typeof task === "object" && "id" in task && "task" in task) {
       if (idSet.has(task.id)) {
         return false; // "id" is not unique
       }
@@ -36,8 +35,9 @@ const validateItemFormat = (item) => {
 };
 const CreateNonValueAdded = async (req, res, next) => {
   try {
-    const { title, StartTime, EndTime, caseNumber, description, ActivityID } = req.body;
-    console.log(req.body)
+    const { title, StartTime, EndTime, caseNumber, description, ActivityID } =
+      req.body;
+    console.log(req.body);
     const newActivity = new NonValueActivtyModel({
       title,
       StartTime,
@@ -50,47 +50,47 @@ const CreateNonValueAdded = async (req, res, next) => {
     const savedActivity = await newActivity.save();
     return res.status(200).json({
       status: 1,
-      message: 'Non-Value activity added successfully',
+      message: "Non-Value activity added successfully",
       data: savedActivity,
     });
-
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
-}
-
-
+};
 
 const CreatePreAudit = async (req, res, next) => {
   try {
-    const { user } = req
+    const { user } = req;
 
     const preAuditDataArray = req.body;
 
-    const validMinutes = 540; // 9 hours shift 
+    const validMinutes = 540; // 9 hours shift
 
     let totalMinutes = preAuditDataArray.reduce((acc, obj) => {
-      return acc + (getTotalMinutes(obj.StartTime, obj.EndTime) || 0)
+      return acc + (getTotalMinutes(obj.StartTime, obj.EndTime) || 0);
     }, 0);
     if (totalMinutes > validMinutes) {
-      return res.status(400).json({ status: 0, message: 'Total pre audit minutes should be less than 9 hours' });
+      return res
+        .status(400)
+        .json({
+          status: 0,
+          message: "Total pre audit minutes should be less than 9 hours",
+        });
     }
-    console.log(totalMinutes, "Pre audit minutes")
+    console.log(totalMinutes, "Pre audit minutes");
 
-    const findCaseNumber = await CaseNumberModel.findOne().sort('-caseNumber')
+    const findCaseNumber = await CaseNumberModel.findOne().sort("-caseNumber");
     const newCase = await CaseNumberModel.create({
-      caseNumber: findCaseNumber ? findCaseNumber.caseNumber + 1 : 1
-    })
-
+      caseNumber: findCaseNumber ? findCaseNumber.caseNumber + 1 : 1,
+    });
 
     // Assuming req.body is an array of PreAudit data
 
     const preAuditInstances = [];
 
     for (const preAuditData of preAuditDataArray) {
-      const { ActivityID, description, StartTime, EndTime, EstimatedPer } = preAuditData;
-
-
+      const { ActivityID, description, StartTime, EndTime, EstimatedPer } =
+        preAuditData;
 
       const PreAudit = await PreAuditModel.create({
         user: user._id,
@@ -99,20 +99,22 @@ const CreatePreAudit = async (req, res, next) => {
         caseNumber: newCase.caseNumber,
         StartTime,
         EndTime,
-        EstimatedPer
+        EstimatedPer,
       });
 
       preAuditInstances.push(PreAudit);
     }
 
-
-
-    await authModel.findByIdAndUpdate(user._id, { currentCase: newCase.caseNumber }, {
-      new: true,
-    });
+    await authModel.findByIdAndUpdate(
+      user._id,
+      { currentCase: newCase.caseNumber },
+      {
+        new: true,
+      }
+    );
     return res.status(200).json({
       status: 1,
-      message: 'Pre-Audit(s) created successfully',
+      message: "Pre-Audit(s) created successfully",
       caseNumber: newCase.caseNumber,
       data: preAuditInstances,
     });
@@ -127,22 +129,6 @@ const CreateStartStudy = async (req, res, next) => {
     const { user } = req;
 
     const { preAuditDataArray } = req.body;
-    console.log("preAuditDataArray", preAuditDataArray);
-    // const validMinutes = 540; // 9 hours shift
-
-    // let totalMinutes = preAuditDataArray.reduce((acc, obj) => {
-    //   return acc + (getTotalMinutes(obj.StartTime, obj.EndTime) || 0);
-    // }, 0);
-    // if (totalMinutes > validMinutes) {
-    //   return res
-    //     .status(400)
-    //     .json({
-    //       status: 0,
-    //       message: "Total pre audit minutes should be less than 9 hours",
-    //     });
-    // }
-    // console.log(totalMinutes, "Pre audit minutes");
-
     const findCaseNumber = await CaseNumberModel.findOne().sort("-caseNumber");
     const newCase = await CaseNumberModel.create({
       caseNumber: findCaseNumber ? findCaseNumber.caseNumber + 1 : 1,
@@ -184,10 +170,35 @@ const CreateStartStudy = async (req, res, next) => {
   }
 };
 
-const CreateAudit = async (req, res, next) => {
-console.log(req.body,"create-audit");
+const getStartStudy = async (req, res, next) => {
   try {
-    const { user } = req
+    const { user } = req;
+    console.log("NEW", user._id);
+    const preAuditList = await PreAuditModel.aggregate([
+      {
+        $match: { user: new mongoose.Types.ObjectId(user._id.toString()) },
+      },
+    ]);
+
+    return next(
+      CustomSuccess.createSuccess(
+        {
+          preAuditList,
+        },
+        "Preaudit Information retrieved successfully",
+        200
+      )
+    );
+  } catch (error) {
+    next(CustomError.createError(error.message, 500));
+  }
+};
+
+
+const CreateAudit = async (req, res, next) => {
+  console.log(req.body, "create-audit");
+  try {
+    const { user } = req;
     const {
       ActivityID,
       caseNumber,
@@ -196,57 +207,71 @@ console.log(req.body,"create-audit");
       PreAuditId,
       StartTime,
       EndTime,
-
     } = req.body;
 
     if (!mongoose.isValidObjectId(ActivityID)) {
-
-      return res.status(400).json({ status: 400, message: "Activity Id is not valid" });
+      return res
+        .status(400)
+        .json({ status: 400, message: "Activity Id is not valid" });
     }
-    const findActivity = await ActivityModel.findById(ActivityID)
+    const findActivity = await ActivityModel.findById(ActivityID);
     if (!findActivity) {
-      return res.status(400).json({ status: 400, message: "Activity not found" });
+      return res
+        .status(400)
+        .json({ status: 400, message: "Activity not found" });
     }
     if (!mongoose.isValidObjectId(PreAuditId)) {
-
-      return res.status(400).json({ status: 400, message: "Preaudit Id is not valid" });
+      return res
+        .status(400)
+        .json({ status: 400, message: "Preaudit Id is not valid" });
     }
-    const findPreAudit = await PreAuditModel.findOne({ _id: PreAuditId, caseNumber: caseNumber })
+    const findPreAudit = await PreAuditModel.findOne({
+      _id: PreAuditId,
+      caseNumber: caseNumber,
+    });
     if (!findPreAudit) {
-      return res.status(400).json({ status: 400, message: "Preaudit not found with this Pre audit or case number" });
+      return res
+        .status(400)
+        .json({
+          status: 400,
+          message: "Preaudit not found with this Pre audit or case number",
+        });
     }
 
-    const findAuditByPreAudit = await AuditModel.findOne({ PreauditID: PreAuditId })
+    const findAuditByPreAudit = await AuditModel.findOne({
+      PreauditID: PreAuditId,
+    });
     if (findAuditByPreAudit) {
-      return res.status(400).json({ status: 400, message: "Audit with this pre audit already exist" });
+      return res
+        .status(400)
+        .json({
+          status: 400,
+          message: "Audit with this pre audit already exist",
+        });
     }
 
-
-
-
-
-    const findPreAudits = await PreAuditModel.find({ caseNumber: caseNumber })
+    const findPreAudits = await PreAuditModel.find({ caseNumber: caseNumber });
     if (findPreAudits.length === 0) {
-      return res.status(400).json({ status: 400, message: "Pre audits not found with this case number" });
+      return res
+        .status(400)
+        .json({
+          status: 400,
+          message: "Pre audits not found with this case number",
+        });
     }
 
-    const findAudits = await AuditModel.find({ caseNumber: caseNumber })
+    const findAudits = await AuditModel.find({ caseNumber: caseNumber });
     if (findAudits.length === findPreAudits.length) {
-      return res.status(400).json({ status: 400, message: "Pre audit and audit length are same" });
-
+      return res
+        .status(400)
+        .json({ status: 400, message: "Pre audit and audit length are same" });
     }
-
-
-
-
-
-
 
     let Documents = [];
     let Recording = [];
-    if (req.files['Documents']) {
+    if (req.files["Documents"]) {
       // Process 'file' upload if it exists in the request
-      const file = req.files['Documents'];
+      const file = req.files["Documents"];
       for (const el of file) {
         const FileUploadModel = await fileUploadModel.create({
           file: el.filename,
@@ -254,14 +279,11 @@ console.log(req.body,"create-audit");
           user: user._id,
         });
         Documents.push(FileUploadModel._id);
-
       }
-
     }
 
-    if (req.files['Recording']) {
-      const RecordingFile = req.files['Recording'];
-
+    if (req.files["Recording"]) {
+      const RecordingFile = req.files["Recording"];
 
       for (const el of RecordingFile) {
         const FileUploadModel = await fileUploadModel.create({
@@ -270,15 +292,10 @@ console.log(req.body,"create-audit");
           user: user._id,
         });
         Recording.push(FileUploadModel._id);
-
       }
-
-
-
     }
 
     const Audit = await AuditModel.create({
-
       user: user._id,
       Documents,
       Recording,
@@ -288,50 +305,41 @@ console.log(req.body,"create-audit");
       caseNumber,
       StartTime,
       EndTime,
-      PreauditID: PreAuditId
+      PreauditID: PreAuditId,
     });
 
-    const newPreAudit = await AuditModel.find({ caseNumber: caseNumber })
+    const newPreAudit = await AuditModel.find({ caseNumber: caseNumber });
 
     let remainCount = findPreAudits.length - newPreAudit.length;
 
-    // item should be in this for mat and id should be unique 
+    // item should be in this for mat and id should be unique
     //"item":[{"id":1,"task":"Manage Dev Team"},{"id":2,"task":"Manage QA Team"}]
 
-
-    await authModel.findByIdAndUpdate(user._id, { currentCase: 0 }, {
-      new: true,
-    });
+    await authModel.findByIdAndUpdate(
+      user._id,
+      { currentCase: 0 },
+      {
+        new: true,
+      }
+    );
 
     return res.status(201).json({
       status: 1,
-      message: 'Audit Created successfully',
+      message: "Audit Created successfully",
       data: { ...Audit._doc, remainCount },
     });
   } catch (error) {
     console.log(error);
     return res.status(400).json({ status: 0, message: error.message });
   }
-
-
-
-
-
-
-
-
-
-
-}
+};
 
 const updateActivityforCase = async (req, res, next) => {
-
   try {
     const { item } = req.body;
-    const { id } = req.params
+    const { id } = req.params;
 
-
-    // item should be in this for mat and id should be unique 
+    // item should be in this for mat and id should be unique
     //"item":[{"id":1,"task":"Manage Dev Team"},{"id":2,"task":"Manage QA Team"}]
 
     const isItemValid = validateItemFormat(item);
@@ -343,78 +351,52 @@ const updateActivityforCase = async (req, res, next) => {
       });
     }
 
-    const UpdateActivity = await SubActivityModel.findByIdAndUpdate(id, { item }, { new: true });
-
-
-
+    const UpdateActivity = await SubActivityModel.findByIdAndUpdate(
+      id,
+      { item },
+      { new: true }
+    );
 
     return res.status(201).json({
       status: 1,
-      message: 'Activity Updated successfully',
+      message: "Activity Updated successfully",
       data: UpdateActivity,
     });
   } catch (error) {
     console.log(error);
     return res.status(400).json({ status: 0, message: error.message });
   }
-
-
-
-
-
-
-
-
-
-
-}
+};
 
 const getActivityforCase = async (req, res, next) => {
-
   try {
-    const { id } = req.params
+    const { id } = req.params;
 
     const Activities = await SubActivityModel.findById(id);
 
-
-
-
-
     return res.status(201).json({
       status: 1,
-      message: 'Activities Retrived successfully',
+      message: "Activities Retrived successfully",
       data: Activities,
     });
   } catch (error) {
     console.log(error);
     return res.status(400).json({ status: 0, message: error.message });
   }
-
-
-
-
-
-
-
-
-
-
-}
-
-
+};
 
 const AuditController = {
   CreatePreAudit,
   CreateStartStudy,
+  getStartStudy,
   CreateNonValueAdded,
   CreateAudit: [
     handleMultipartData.fields([
-      { name: 'Recording', maxCount: 5 },
-      { name: 'Documents', maxCount: 5 }
+      { name: "Recording", maxCount: 5 },
+      { name: "Documents", maxCount: 5 },
     ]),
-    CreateAudit
+    CreateAudit,
   ],
-
 };
 
 export default AuditController;
