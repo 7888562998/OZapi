@@ -70,12 +70,10 @@ const CreatePreAudit = async (req, res, next) => {
       return acc + (getTotalMinutes(obj.StartTime, obj.EndTime) || 0);
     }, 0);
     if (totalMinutes > validMinutes) {
-      return res
-        .status(400)
-        .json({
-          status: 0,
-          message: "Total pre audit minutes should be less than 9 hours",
-        });
+      return res.status(400).json({
+        status: 0,
+        message: "Total pre audit minutes should be less than 9 hours",
+      });
     }
     console.log(totalMinutes, "Pre audit minutes");
 
@@ -201,6 +199,30 @@ const getStartStudyByCaseNumber = async (req, res, next) => {
       {
         $match: { caseNumber: Number(caseNumber) },
       },
+      {
+        $lookup: {
+          from: "activities",
+          localField: "ActivityID",
+          foreignField: "_id",
+          as: "activityDetails",
+        },
+      },
+      {
+        $unwind: {
+          path: "$activityDetails",
+          preserveNullAndEmptyArrays: true,
+        },
+      },
+      {
+        $addFields: {
+          activityTitle: "$activityDetails.title",
+        },
+      },
+      {
+        $project: {
+          activityDetails: 0,
+        },
+      },
     ]);
 
     return next(
@@ -216,7 +238,6 @@ const getStartStudyByCaseNumber = async (req, res, next) => {
     next(CustomError.createError(error.message, 500));
   }
 };
-
 
 const CreateAudit = async (req, res, next) => {
   console.log(req.body, "create-audit");
@@ -253,34 +274,28 @@ const CreateAudit = async (req, res, next) => {
       caseNumber: caseNumber,
     });
     if (!findPreAudit) {
-      return res
-        .status(400)
-        .json({
-          status: 400,
-          message: "Preaudit not found with this Pre audit or case number",
-        });
+      return res.status(400).json({
+        status: 400,
+        message: "Preaudit not found with this Pre audit or case number",
+      });
     }
 
     const findAuditByPreAudit = await AuditModel.findOne({
       PreauditID: PreAuditId,
     });
     if (findAuditByPreAudit) {
-      return res
-        .status(400)
-        .json({
-          status: 400,
-          message: "Audit with this pre audit already exist",
-        });
+      return res.status(400).json({
+        status: 400,
+        message: "Audit with this pre audit already exist",
+      });
     }
 
     const findPreAudits = await PreAuditModel.find({ caseNumber: caseNumber });
     if (findPreAudits.length === 0) {
-      return res
-        .status(400)
-        .json({
-          status: 400,
-          message: "Pre audits not found with this case number",
-        });
+      return res.status(400).json({
+        status: 400,
+        message: "Pre audits not found with this case number",
+      });
     }
 
     const findAudits = await AuditModel.find({ caseNumber: caseNumber });
