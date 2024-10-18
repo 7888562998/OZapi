@@ -194,6 +194,29 @@ const getStartStudy = async (req, res, next) => {
   }
 };
 
+const getStartStudyByCaseNumber = async (req, res, next) => {
+  try {
+    const { caseNumber } = req.params;
+    const preAuditList = await PreAuditModel.aggregate([
+      {
+        $match: { caseNumber: Number(caseNumber) },
+      },
+    ]);
+
+    return next(
+      CustomSuccess.createSuccess(
+        {
+          preAuditList,
+        },
+        "Preaudit Information retrieved successfully",
+        200
+      )
+    );
+  } catch (error) {
+    next(CustomError.createError(error.message, 500));
+  }
+};
+
 
 const CreateAudit = async (req, res, next) => {
   console.log(req.body, "create-audit");
@@ -389,6 +412,7 @@ const AuditController = {
   CreatePreAudit,
   CreateStartStudy,
   getStartStudy,
+  getStartStudyByCaseNumber,
   CreateNonValueAdded,
   CreateAudit: [
     handleMultipartData.fields([
