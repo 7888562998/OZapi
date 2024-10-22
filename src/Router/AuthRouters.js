@@ -2,12 +2,14 @@ import { Router, application } from "express";
 import AuthController from "../Controller/AuthController.js";
 import AuditController from "../Controller/AuditController.js";
 import RecordController from "../Controller/RecordController.js";
+import multer from "multer";
 
 import { AuthMiddleware } from "./Middleware/AuthMiddleware.js";
 import ActivityController from "../Controller/ActivityController.js";
 
-export let AuthRouters = Router();
 
+export let AuthRouters = Router();
+const upload = multer({ dest: 'uploads/' });
 
 
 AuthRouters.route("/login").post(AuthController.LoginUser);
@@ -43,6 +45,7 @@ AuthRouters.prefix("/user", AuthMiddleware, async function () {
  AuthRouters.route("/getStartStudy/:caseNumber").get(AuditController.getStartStudyByCaseNumber);    
  AuthRouters.route("/createaudit").post(AuditController.CreateAudit);  
  AuthRouters.route("/createnonvalueactivity").post(AuditController.CreateNonValueAdded);  
+ AuthRouters.route("/convert-image-to-pdf").post(upload.single('image'),AuditController.ConvertImageToPdf); 
   
  AuthRouters.route("/auditreport").post(RecordController.MatchPreAuditAndAudit);  
 
