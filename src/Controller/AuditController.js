@@ -14,14 +14,6 @@ import authModel from "../DB/Model/authModel.js";
 import NonValueActivtyModel from "../DB/Model/NonValueActivity.js";
 import { getTotalMinutes } from "../Utils/getTotalMinutes.js";
 
-import PDFDocument from 'pdfkit';
-import fs from 'fs';
-import path from 'path';
-import { fileURLToPath } from 'url';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
 const validateItemFormat = (item) => {
   if (!Array.isArray(item)) {
     return false; // "item" should be an array
@@ -63,59 +55,6 @@ const CreateNonValueAdded = async (req, res, next) => {
       data: savedActivity,
     });
   } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-};
-
-const ConvertImageToPdf = async (req, res, next) => {
-  try {
-    // Ensure an image file is uploaded
-    if (!req.file) {
-      return res.status(400).json({ error: 'No image uploaded.' });
-    }
-
-    // Uploaded image path
-    const imageFilePath = req.file.path;
-
-    // Define the output path for the PDF file
-    const outputPdfPath = path.join(__dirname, '../pdfDownloads/output.pdf');
-
-    // Create a new PDF document
-    const doc = new PDFDocument();
-
-    // Create a writable stream for the PDF output
-    const pdfStream = fs.createWriteStream(outputPdfPath);
-    doc.pipe(pdfStream);
-
-    // Add the uploaded image to the PDF
-    doc.image(imageFilePath, {
-      fit: [500, 400],  // Adjust size as needed
-      align: 'center',
-      valign: 'center',
-    });
-
-    // Finalize the PDF file
-    doc.end();
-
-    // When the PDF is finished writing, return a response with a link to download it
-    pdfStream.on('finish', () => {
-      const pdfDownloadLink = `${process.env.BASE_URL}pdfDownloads/output.pdf`;
-      
-      // Respond with the link to download the PDF
-      res.status(201).json({
-        message: 'PDF created successfully',
-        link: pdfDownloadLink,
-      });
-
-      // Optionally, delete the uploaded image file after the PDF is created
-      fs.unlink(imageFilePath, (err) => {
-        if (err) {
-          console.error('Error deleting the uploaded image:', err);
-        }
-      });
-    });
-  } catch (error) {
-    // Handle errors and send a 500 response with the error message
     res.status(500).json({ error: error.message });
   }
 };
@@ -491,7 +430,6 @@ const AuditController = {
   getStartStudy,
   getStartStudyByCaseNumber,
   CreateNonValueAdded,
-  ConvertImageToPdf,
   CreateAudit: [
     handleMultipartData.fields([
       { name: "Recording", maxCount: 5 },
