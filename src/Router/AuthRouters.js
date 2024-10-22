@@ -9,7 +9,6 @@ import ActivityController from "../Controller/ActivityController.js";
 
 
 export let AuthRouters = Router();
-const upload = multer({ dest: 'uploads/' });
 
 
 AuthRouters.route("/login").post(AuthController.LoginUser);
@@ -45,7 +44,6 @@ AuthRouters.prefix("/user", AuthMiddleware, async function () {
  AuthRouters.route("/getStartStudy/:caseNumber").get(AuditController.getStartStudyByCaseNumber);    
  AuthRouters.route("/createaudit").post(AuditController.CreateAudit);  
  AuthRouters.route("/createnonvalueactivity").post(AuditController.CreateNonValueAdded);  
- AuthRouters.route("/convert-image-to-pdf").post(upload.single('image'),AuditController.ConvertImageToPdf); 
   
  AuthRouters.route("/auditreport").post(RecordController.MatchPreAuditAndAudit);  
 

@@ -29,7 +29,6 @@ app.use(cors(corsOptions));
 
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
-app.use('/pdfDownloads', express.static(path.join(dirname, 'src/pdfDownloads')));
 app.use(morgan("dev"));
 
 morganBody(app, {
@@ -43,9 +42,6 @@ const start = async () => {
   try {
     await connectDB();
     console.log("MongoDB connected successfully");
-    app.listen(3000,()=>{
-      console.log("3000");
-    })
   } catch (err) {
     console.error("MongoDB connection error:", err);
   }
