@@ -36,8 +36,15 @@ const validateItemFormat = (item) => {
 };
 const CreateNonValueAdded = async (req, res, next) => {
   try {
-    const { title, StartTime, EndTime, caseNumber, description, ActivityID,PreAuditId} =
-      req.body;
+    const {
+      title,
+      StartTime,
+      EndTime,
+      caseNumber,
+      description,
+      ActivityID,
+      PreAuditId,
+    } = req.body;
     console.log(req.body);
     const newActivity = new NonValueActivtyModel({
       title,
@@ -46,7 +53,7 @@ const CreateNonValueAdded = async (req, res, next) => {
       caseNumber,
       description,
       ActivityID,
-      PreAuditId
+      PreAuditId,
     });
 
     const savedActivity = await newActivity.save();
@@ -61,15 +68,17 @@ const CreateNonValueAdded = async (req, res, next) => {
 };
 const getNonActivites = async (req, res, next) => {
   try {
-    const { activityId } = req.params;
-console.log("activityId",activityId);
-  const { ObjectId } = mongoose.Types; 
-    const preAuditList = await NonValueActivtyModel.findOne({ActivityID:new ObjectId(activityId) });
-   
+    const { PreAuditId } = req.params;
+    console.log("PreAuditId", PreAuditId);
+    const { ObjectId } = mongoose.Types;
+    const preAuditList = await NonValueActivtyModel.findOne({
+      PreAuditId: new ObjectId(PreAuditId),
+    });
+
     return next(
       CustomSuccess.createSuccess(
         {
-          preAuditList
+          preAuditList,
         },
         "Preaudit Information retrieved successfully",
         200
