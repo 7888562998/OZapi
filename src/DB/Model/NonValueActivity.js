@@ -27,6 +27,10 @@ const NonValueActivtySchema = new mongoose.Schema(
       required: false,
       ref: "Activity",
     },
+    PreAuditId: {
+      type: mongoose.Schema.Types.ObjectId,
+      required: false,
+    }
   },
   {
     timestamps: true,
