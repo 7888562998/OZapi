@@ -36,7 +36,7 @@ const validateItemFormat = (item) => {
 };
 const CreateNonValueAdded = async (req, res, next) => {
   try {
-    const { title, StartTime, EndTime, caseNumber, description, ActivityID } =
+    const { title, StartTime, EndTime, caseNumber, description, ActivityID,PreAuditId} =
       req.body;
     console.log(req.body);
     const newActivity = new NonValueActivtyModel({
@@ -58,7 +58,26 @@ const CreateNonValueAdded = async (req, res, next) => {
     res.status(500).json({ error: error.message });
   }
 };
-
+const getNonActivites = async (req, res, next) => {
+  try {
+    const { activityId } = req.params;
+console.log("activityId",activityId);
+  const { ObjectId } = mongoose.Types; 
+    const preAuditList = await NonValueActivtyModel.findOne({ActivityID:new ObjectId(activityId) });
+   
+    return next(
+      CustomSuccess.createSuccess(
+        {
+          preAuditList
+        },
+        "Preaudit Information retrieved successfully",
+        200
+      )
+    );
+  } catch (error) {
+    next(CustomError.createError(error.message, 500));
+  }
+};
 const CreatePreAudit = async (req, res, next) => {
   try {
     const { user } = req;
@@ -430,6 +449,7 @@ const AuditController = {
   getStartStudy,
   getStartStudyByCaseNumber,
   CreateNonValueAdded,
+  getNonActivites,
   CreateAudit: [
     handleMultipartData.fields([
       { name: "Recording", maxCount: 5 },
