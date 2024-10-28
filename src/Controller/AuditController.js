@@ -46,6 +46,7 @@ const CreateNonValueAdded = async (req, res, next) => {
       caseNumber,
       description,
       ActivityID,
+      PreAuditId
     });
 
     const savedActivity = await newActivity.save();
