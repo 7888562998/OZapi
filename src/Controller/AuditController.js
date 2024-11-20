@@ -156,7 +156,7 @@ const CreateStartStudy = async (req, res, next) => {
   try {
     const { user } = req;
 
-    const { preAuditDataArray } = req.body;
+    const preAuditDataArray = req.body;
     const findCaseNumber = await CaseNumberModel.findOne().sort("-caseNumber");
     const newCase = await CaseNumberModel.create({
       caseNumber: findCaseNumber ? findCaseNumber.caseNumber + 1 : 1,
@@ -167,13 +167,14 @@ const CreateStartStudy = async (req, res, next) => {
     const preAuditInstances = [];
 
     for (const preAuditData of preAuditDataArray) {
-      const { ActivityID, totalTime } = preAuditData;
+      const { ActivityID, startTime,endTime } = preAuditData;
 
       const PreAudit = await PreAuditModel.create({
         user: user._id,
         ActivityID,
         caseNumber: newCase.caseNumber,
-        totalTime,
+        startTime,
+        endTime
       });
 
       preAuditInstances.push(PreAudit);
@@ -281,6 +282,8 @@ const CreateAudit = async (req, res, next) => {
       PreAuditId,
       StartTime,
       EndTime,
+      from,
+      to
     } = req.body;
 
     if (!mongoose.isValidObjectId(ActivityID)) {
@@ -374,6 +377,8 @@ const CreateAudit = async (req, res, next) => {
       StartTime,
       EndTime,
       PreauditID: PreAuditId,
+      from,
+      to
     });
 
     const newPreAudit = await AuditModel.find({ caseNumber: caseNumber });

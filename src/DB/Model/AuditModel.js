@@ -48,6 +48,14 @@ const AuditSchema = new mongoose.Schema(
       required: true,
       ref: "PreAudit",
     },
+    from: {
+      type: Date,
+      default: Date.now,
+    },
+    to: {
+      type: Date,
+      required: false,
+    },
     Nonvalueadded: {
       enum: ['Behaviour', 'Skills', 'System', 'Technical']
     }
