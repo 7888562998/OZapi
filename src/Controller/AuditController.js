@@ -156,7 +156,7 @@ const CreateStartStudy = async (req, res, next) => {
   try {
     const { user } = req;
 
-    const { preAuditDataArray } = req.body;
+    const preAuditDataArray = req.body;
     const findCaseNumber = await CaseNumberModel.findOne().sort("-caseNumber");
     const newCase = await CaseNumberModel.create({
       caseNumber: findCaseNumber ? findCaseNumber.caseNumber + 1 : 1,
