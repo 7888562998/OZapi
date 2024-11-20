@@ -20,18 +20,16 @@ const PreAuditSchema = new mongoose.Schema(
     caseNumber: {
       type: Number,
     },
-    totalTime: {
+
+    startTime:{
       type: String,
-      lowercase: false,
+      required: true,
     },
-    // StartTime:{
-    //   type: String,
-    //   required: true,
-    // },
-    // EndTime:{
-    //   type: String,
-    //   required: true,
-    // },
+    endTime:{
+      type: String,
+      required: true,
+    },
+
     // EstimatedPer:{
     //   type: String,
     //   required: true,

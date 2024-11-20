@@ -167,13 +167,14 @@ const CreateStartStudy = async (req, res, next) => {
     const preAuditInstances = [];
 
     for (const preAuditData of preAuditDataArray) {
-      const { ActivityID, totalTime } = preAuditData;
+      const { ActivityID, startTime,endTime } = preAuditData;
 
       const PreAudit = await PreAuditModel.create({
         user: user._id,
         ActivityID,
         caseNumber: newCase.caseNumber,
-        totalTime,
+        startTime,
+        endTime
       });
 
       preAuditInstances.push(PreAudit);
