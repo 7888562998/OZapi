@@ -281,6 +281,8 @@ const CreateAudit = async (req, res, next) => {
       PreAuditId,
       StartTime,
       EndTime,
+      from,
+      to
     } = req.body;
 
     if (!mongoose.isValidObjectId(ActivityID)) {
@@ -374,6 +376,8 @@ const CreateAudit = async (req, res, next) => {
       StartTime,
       EndTime,
       PreauditID: PreAuditId,
+      from,
+      to
     });
 
     const newPreAudit = await AuditModel.find({ caseNumber: caseNumber });
