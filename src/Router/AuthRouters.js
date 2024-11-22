@@ -47,7 +47,8 @@ AuthRouters.prefix("/user", AuthMiddleware, async function () {
  AuthRouters.route("/createaudit").post(AuditController.CreateAudit);  
  AuthRouters.route("/createnonvalueactivity").post(AuditController.CreateNonValueAdded);  
   
- AuthRouters.route("/auditreport").post(RecordController.MatchPreAuditAndAudit);  
+ AuthRouters.route("/auditreport").post(RecordController.MatchPreAuditAndAudit);
+ AuthRouters.route("/getaudit").post(AuditController.getAudit); 
 
  
  
