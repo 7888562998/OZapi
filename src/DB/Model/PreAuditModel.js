@@ -29,7 +29,10 @@ const PreAuditSchema = new mongoose.Schema(
       type: Date,
       required: true,
     },
-
+    totalPercentage: {
+      type: Number,
+      default: 0,
+    }
     // EstimatedPer:{
     //   type: String,
     //   required: true,
