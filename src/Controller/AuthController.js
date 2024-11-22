@@ -2,6 +2,7 @@ import fs from "fs";
 import bcrypt, { compare } from "bcrypt";
 import authModel from "../DB/Model/authModel.js";
 import fileUploadModel from "../DB/Model/fileUploadModel.js";
+import imagesUploadModel from "../DB/Model/imagesUploadModel.js"
 import { handleMultipartData } from "../Utils/MultipartData.js";
 import CustomError from "../Utils/ResponseHandler/CustomError.js";
 import CustomSuccess from "../Utils/ResponseHandler/CustomSuccess.js";
@@ -539,6 +540,39 @@ const updateUser = async (req, res, next) => {
   }
 };
 
+
+const updateUserMultipleImages = async (req, res, next) => {
+  try {
+    const { user } = req;
+    const images = req.files["file"];
+    if (req.files['file'].length ==0) {
+      return res.status(400).json({ message: "No files uploaded" });
+    }
+
+    const filesData = images.map((file) => ({
+      filePath: file.path,
+      fileType: file.mimetype,
+    }));
+
+    const allFiles = [...filesData];
+
+    const fileUploadEntry = await imagesUploadModel.create({
+      files: allFiles,
+      user: user._id,
+    });
+    
+    console.log("fileUploadEntry",fileUploadEntry)
+    return next(
+      CustomSuccess.createSuccess(
+        { data: fileUploadEntry },
+        "Images uploaded successfully",
+        200
+      )
+    )
+  } catch (error) {
+    next(CustomError.createError(error.message, 500));
+  }
+};
 
 
 const LoginUser = async (req, res, next) => {
@@ -1208,6 +1242,12 @@ const AuthController = {
       { name: 'coverImageFile', maxCount: 1 }
     ]),
     updateUser
+  ],
+  updateUserMultipleImages: [
+    handleMultipartData.fields([
+      { name: 'file'},
+    ]),
+    updateUserMultipleImages
   ],
   getProfile,
   getComapnyManager,
