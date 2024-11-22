@@ -167,14 +167,14 @@ const CreateStartStudy = async (req, res, next) => {
     const preAuditInstances = [];
 
     for (const preAuditData of preAuditDataArray) {
-      const { ActivityID, startTime,endTime } = preAuditData;
+      const { ActivityID, startTime, endTime } = preAuditData;
 
       const PreAudit = await PreAuditModel.create({
         user: user._id,
         ActivityID,
         caseNumber: newCase.caseNumber,
         startTime,
-        endTime
+        endTime,
       });
 
       preAuditInstances.push(PreAudit);
@@ -283,7 +283,7 @@ const CreateAudit = async (req, res, next) => {
       StartTime,
       EndTime,
       from,
-      to
+      to,
     } = req.body;
 
     if (!mongoose.isValidObjectId(ActivityID)) {
@@ -365,6 +365,40 @@ const CreateAudit = async (req, res, next) => {
         Recording.push(FileUploadModel._id);
       }
     }
+    
+    
+     const startingTime = new Date(from);
+     const endTime = new Date(to);
+     const totalDuration = endTime - startingTime;
+     
+    const PreauditRecord = await PreAuditModel.findOne({
+      ActivityID: ActivityID,
+      caseNumber: caseNumber
+    });
+
+    const preStartingTime = new Date(PreauditRecord.startTime);
+    const preEndTime = new Date(PreauditRecord.endTime);
+    
+    const elapsedDuration = preEndTime - preStartingTime;
+    const percentage = (elapsedDuration / totalDuration) * 100;
+    
+
+    const updatedRecord = await PreAuditModel.findOneAndUpdate(
+      {
+        ActivityID: ActivityID,
+        caseNumber: caseNumber,
+      },
+      {
+        $set: {   
+          totalPercentage: percentage,
+        },
+      },
+      {
+        new: true,
+        runValidators: true,
+      }
+    );
+
 
     const Audit = await AuditModel.create({
       user: user._id,
@@ -378,7 +412,7 @@ const CreateAudit = async (req, res, next) => {
       EndTime,
       PreauditID: PreAuditId,
       from,
-      to
+      to,
     });
 
     const newPreAudit = await AuditModel.find({ caseNumber: caseNumber });
@@ -458,25 +492,25 @@ const getActivityforCase = async (req, res, next) => {
   }
 };
 
-const getAudit = async(req, res, next) => {
+const getAudit = async (req, res, next) => {
   try {
-      const { user } = req;
-      const { activityId, caseNo } = req.body;
-      console.log("NEW", user._id);
-      const Audit = await AuditModel.find({
-          ActivityID: activityId,
-          caseNumber: caseNo
-      });
+    const { user } = req;
+    const { activityId, caseNo } = req.body;
+    console.log("NEW", user._id);
+    const Audit = await AuditModel.find({
+      ActivityID: activityId,
+      caseNumber: caseNo,
+    });
 
-      return next(
-          CustomSuccess.createSuccess(
-              Audit,
-              "Audit Information retrieved successfully",
-              200
-          )
-      );
+    return next(
+      CustomSuccess.createSuccess(
+        Audit,
+        "Audit Information retrieved successfully",
+        200
+      )
+    );
   } catch (error) {
-      next(CustomError.createError(error.message, 500));
+    next(CustomError.createError(error.message, 500));
   }
 };
 
