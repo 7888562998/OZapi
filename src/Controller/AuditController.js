@@ -380,7 +380,7 @@ const CreateAudit = async (req, res, next) => {
     const preEndTime = new Date(PreauditRecord.endTime);
     
     const elapsedDuration = preEndTime - preStartingTime;
-    const percentage = (elapsedDuration / totalDuration) * 100;
+    const percentage = Math.abs((elapsedDuration / totalDuration) * 100);
     
 
     const updatedRecord = await PreAuditModel.findOneAndUpdate(
