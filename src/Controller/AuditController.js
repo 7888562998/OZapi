@@ -458,6 +458,28 @@ const getActivityforCase = async (req, res, next) => {
   }
 };
 
+const getAudit = async(req, res, next) => {
+  try {
+      const { user } = req;
+      const { activityId, caseNo } = req.body;
+      console.log("NEW", user._id);
+      const Audit = await AuditModel.find({
+          ActivityID: activityId,
+          caseNumber: caseNo
+      });
+
+      return next(
+          CustomSuccess.createSuccess(
+              Audit,
+              "Audit Information retrieved successfully",
+              200
+          )
+      );
+  } catch (error) {
+      next(CustomError.createError(error.message, 500));
+  }
+};
+
 const AuditController = {
   CreatePreAudit,
   CreateStartStudy,
@@ -465,6 +487,7 @@ const AuditController = {
   getStartStudyByCaseNumber,
   CreateNonValueAdded,
   getNonActivites,
+  getAudit,
   CreateAudit: [
     handleMultipartData.fields([
       { name: "Recording", maxCount: 5 },
