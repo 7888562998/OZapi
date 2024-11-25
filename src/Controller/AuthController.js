@@ -32,6 +32,7 @@ import { Types } from "mongoose";
 import AuditModel from "../DB/Model/AuditModel.js";
 import IndustryModel from "../DB/Model/industryModel.js";
 import CompanyModel from "../DB/Model/companyModel.js";
+import companyModel from "../DB/Model/companyModel.js";
 
 
 const SocialLoginUser = async (req, res, next) => {
@@ -841,7 +842,10 @@ const getProfile = async (req, res, next) => {
       ])
     )[0];
 
+    
+
     const totalAudits = await AuditModel.find().count();
+    const companyData= await companyModel.findById(AuthModel.companyId.toString());
     const totalIndustries = await IndustryModel.find().count();
 
     const totalUsersResult = await authModel.aggregate([
@@ -860,6 +864,7 @@ const getProfile = async (req, res, next) => {
           totalAudits,
           totalIndustries,
           totalAnalysis: 0,
+          companyName:companyData.companyName
         },
         "User Information get Successfull",
         200
