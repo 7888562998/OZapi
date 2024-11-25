@@ -875,6 +875,43 @@ const getProfile = async (req, res, next) => {
   }
 };
 
+const updateProfile = async (req, res, next) => {
+  try {
+    const { email, role } = req.body;
+    console.log(" email, role ", email, role );
+
+    if (!email || !role) {
+      return res.status(400).json({ message: "Email and role are required." });
+    }
+
+    const existingUser = await authModel.findOne({ email });
+    console.log("existingUser",existingUser);
+    if (!existingUser) {
+      return res.status(404).json({ message: "User not found." });
+    }
+
+    await authModel.updateOne({ email }, { $set: { role } });
+
+    return next(
+      CustomSuccess.createSuccess(
+        {
+          message: "Profile updated successfully",
+            user: {
+              email: existingUser.email,
+              name: existingUser.name,
+              role: existingUser.role,
+            },
+        },
+        "Profile updated successfully",
+        200
+      )
+    );
+  } catch (error) {
+    next(CustomError.createError(error.message, 500));
+  }
+};
+
+
 const getComapnyManager = async (req, res) => {
   try {
     const { companyId } = req.params;
@@ -1255,6 +1292,7 @@ const AuthController = {
     updateUserMultipleImages
   ],
   getProfile,
+  updateProfile,
   getComapnyManager,
   // changePassword,
   forgetPassword,
