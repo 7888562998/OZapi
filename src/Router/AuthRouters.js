@@ -29,7 +29,8 @@ application.prefix = Router.prefix = function (path, middleware, configure) {
 AuthRouters.prefix("/user", AuthMiddleware, async function () {  
   AuthRouters.route("/update").post(AuthController.updateUser);
   AuthRouters.route("/updateUserMultipleImages").post(AuthController.updateUserMultipleImages);    
-  AuthRouters.route("/getprofile").get(AuthController.getProfile);     
+  AuthRouters.route("/getprofile").get(AuthController.getProfile);
+  AuthRouters.route("/updateProfile").post(AuthController.updateProfile);
   AuthRouters.route("/managers/:companyId").get(AuthController.getComapnyManager); 
   AuthRouters.route("/resetpassword").post(AuthController.resetpassword);     
   AuthRouters.route("/Verify").post(AuthController.VerifyOtp);
