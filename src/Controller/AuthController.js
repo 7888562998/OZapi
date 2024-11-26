@@ -947,12 +947,9 @@ const createUserIndustry = async (req, res, next) => {
       industryId: new mongoose.Types.ObjectId(industryId),
     });
 
-    console.log("existingUser", existingUser, existingIndustry);
-
     if (!existingUser) {
       return res.status(404).json({ message: "User not found." });
     }
-    console.log(existingIndustry, "existingIndustry");
 
     if (existingIndustry) {
       return res.status(409).json({ message: "Industry is already exist." });
