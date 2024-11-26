@@ -978,6 +978,25 @@ const createUserIndustry = async (req, res, next) => {
   }
 };
 
+const getUserIndustry = async (req, res) => {
+  try {
+    const userId = req.user._id;
+    const Industries = await UserIndustryModel.find({ user: userId});
+    res.status(200).json({
+      success: true,
+      message: "Industries fetched successfully",
+      data: Industries,
+    });
+  } catch (error) {
+    // Handle any errors
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch company manager",
+      error: error.message,
+    });
+  }
+};
+
 const getComapnyManager = async (req, res) => {
   try {
     const { companyId } = req.params;
@@ -1351,6 +1370,7 @@ const AuthController = {
   getProfile,
   updateProfile,
   createUserIndustry,
+  getUserIndustry,
   getComapnyManager,
   // changePassword,
   forgetPassword,
