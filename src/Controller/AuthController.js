@@ -857,11 +857,16 @@ const getProfile = async (req, res, next) => {
       ])
     )[0];
 
-    const totalAudits = await AuditModel.find().count();
+    const totalAudits = await AuditModel.find({
+      user: new mongoose.Types.ObjectId(user._id.toString()),
+    }).count();
+
     const companyData = await companyModel.findById(
       AuthModel.companyId.toString()
     );
-    const totalIndustries = await IndustryModel.find().count();
+    const totalIndustries = await UserIndustryModel.find({
+      user: new mongoose.Types.ObjectId(user._id.toString()),
+    }).count();
 
     const totalUsersResult = await authModel.aggregate([
       { $match: { userType: "user" } },
@@ -958,7 +963,7 @@ const createUserIndustry = async (req, res, next) => {
     const newUser = new UserIndustryModel({
       user: existingUser._id,
       title: industryData.title,
-      industryId:new mongoose.Types.ObjectId(industryId),
+      industryId: new mongoose.Types.ObjectId(industryId),
     });
 
     await newUser.save();
