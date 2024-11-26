@@ -31,6 +31,7 @@ AuthRouters.prefix("/user", AuthMiddleware, async function () {
   AuthRouters.route("/updateUserMultipleImages").post(AuthController.updateUserMultipleImages);    
   AuthRouters.route("/getprofile").get(AuthController.getProfile);
   AuthRouters.route("/updateProfile").post(AuthController.updateProfile);
+  AuthRouters.route("/createUserIndustry").post(AuthController.createUserIndustry);
   AuthRouters.route("/managers/:companyId").get(AuthController.getComapnyManager); 
   AuthRouters.route("/resetpassword").post(AuthController.resetpassword);     
   AuthRouters.route("/Verify").post(AuthController.VerifyOtp);

@@ -2,7 +2,7 @@ import fs from "fs";
 import bcrypt, { compare } from "bcrypt";
 import authModel from "../DB/Model/authModel.js";
 import fileUploadModel from "../DB/Model/fileUploadModel.js";
-import imagesUploadModel from "../DB/Model/imagesUploadModel.js"
+import imagesUploadModel from "../DB/Model/imagesUploadModel.js";
 import { handleMultipartData } from "../Utils/MultipartData.js";
 import CustomError from "../Utils/ResponseHandler/CustomError.js";
 import CustomSuccess from "../Utils/ResponseHandler/CustomSuccess.js";
@@ -33,24 +33,31 @@ import AuditModel from "../DB/Model/AuditModel.js";
 import IndustryModel from "../DB/Model/industryModel.js";
 import CompanyModel from "../DB/Model/companyModel.js";
 import companyModel from "../DB/Model/companyModel.js";
-
+import UserIndustryModel from "../DB/Model/userIndustryModel.js";
 
 const SocialLoginUser = async (req, res, next) => {
   try {
-
-    const { deviceToken, deviceType, accessToken, socialType, userType } = req.body;
-    const { hasError, message, data } = await accessTokenValidator(accessToken, socialType);
+    const { deviceToken, deviceType, accessToken, socialType, userType } =
+      req.body;
+    const { hasError, message, data } = await accessTokenValidator(
+      accessToken,
+      socialType
+    );
     if (hasError) {
       return next(CustomError.createError(message, 200));
     }
     const { name, image, identifier, dateOfBirth, gender } = data;
 
-    const authmodel = await AuthModel.findOne({ identifier: identifier }).populate("profile");
+    const authmodel = await AuthModel.findOne({
+      identifier: identifier,
+    }).populate("profile");
     if (authmodel) {
       var UserProfile;
 
       if (authmodel.userType == "Customer") {
-        const CustomerProfile = await CustomerModel.find({ auth: authmodel._id }).populate({
+        const CustomerProfile = await CustomerModel.find({
+          auth: authmodel._id,
+        }).populate({
           path: "profile",
         });
 
@@ -61,7 +68,9 @@ const SocialLoginUser = async (req, res, next) => {
         UserProfile = { ...CustomerProfile, token };
       }
       if (authmodel.userType == "Instructor") {
-        const InstructorProfile = await InstructorModel.find({ auth: authmodel._id }).populate({
+        const InstructorProfile = await InstructorModel.find({
+          auth: authmodel._id,
+        }).populate({
           path: "profile",
         });
         InstructorProfile.isCompleteProfile = authmodel.isCompleteProfile;
@@ -70,20 +79,29 @@ const SocialLoginUser = async (req, res, next) => {
         UserProfile = { ...InstructorProfile, token };
       }
 
-      const { error } = await linkUserDevice(authmodel._id, deviceToken, deviceType);
+      const { error } = await linkUserDevice(
+        authmodel._id,
+        deviceToken,
+        deviceType
+      );
       if (error) {
         return next(CustomError.createError(error, 200));
       }
       const respdata = {
         _id: UserProfile._id,
         fullName: UserProfile.fullName,
-        follower: UserProfile.follower.length > 0 ? UserProfile.follower.length : 0,
-        following: UserProfile.following.length > 0 ? UserProfile.following.length : 0,
+        follower:
+          UserProfile.follower.length > 0 ? UserProfile.follower.length : 0,
+        following:
+          UserProfile.following.length > 0 ? UserProfile.following.length : 0,
         routine: UserProfile.routine,
         nutrition: UserProfile.nutrition,
         dietplane: UserProfile.dietplane,
         userType: authmodel.userType,
-        image: await fileUploadModel.findOne({ _id: UserProfile.image }, { file: 1 }),
+        image: await fileUploadModel.findOne(
+          { _id: UserProfile.image },
+          { file: 1 }
+        ),
         isCompleteProfile: authmodel.isCompleteProfile,
         token: UserProfile.token,
       };
@@ -132,16 +150,14 @@ const SocialLoginUser = async (req, res, next) => {
         token: token,
       };
 
-      return next(CustomSuccess.createSuccess(respdata, "SignUp successfully", 200));
+      return next(
+        CustomSuccess.createSuccess(respdata, "SignUp successfully", 200)
+      );
     }
   } catch (error) {
     return next(CustomError.createError(error.message, 500));
   }
 };
-
-
-
-
 
 //complete profile
 const completeProfile = async (req, res, next) => {
@@ -150,11 +166,12 @@ const completeProfile = async (req, res, next) => {
     const hashedPassword = hashPassword(password);
     // Check if the email already exists
     const User = await authModel.findOne({ email });
-    console.log(User)
+    console.log(User);
     if (!User) {
-      return next(CustomError.badRequest("You are not registered please contact Admin"));
+      return next(
+        CustomError.badRequest("You are not registered please contact Admin")
+      );
     }
-
 
     if (User.isVerified == true) {
       return next(CustomError.badRequest("Account already created"));
@@ -229,10 +246,10 @@ const completeProfile = async (req, res, next) => {
     const newUser = {
       email: User.email,
       password: hashedPassword,
-      name
+      name,
     };
 
-    var token = jwt.sign({ userData: newUser, otp }, 'secret') //jwt.sign({userData:newUser , otp:userOTP} , 'secret' , {expiresIn:1})
+    var token = jwt.sign({ userData: newUser, otp }, "secret"); //jwt.sign({userData:newUser , otp:userOTP} , 'secret' , {expiresIn:1})
 
     return next(
       CustomSuccess.createSuccess(
@@ -241,38 +258,37 @@ const completeProfile = async (req, res, next) => {
         200
       )
     );
-
-
   } catch (error) {
     return next(CustomError.createError(error.message, 500));
   }
 };
 
-// Generate OTP 
+// Generate OTP
 const generateSignUpOtp = async ({ email, password, name }) => {
   try {
     const hashedPassword = hashPassword(password);
 
-
     let otp = Math.floor(Math.random() * 90000) + 100000;
-    console.log(otp, "LOGIN OTP")
-    const user = authModel.findOne({ email: email })
+    console.log(otp, "LOGIN OTP");
+    const user = authModel.findOne({ email: email });
     if (!user) {
       return CustomError.createError("User not found", 400);
     }
     const otpCreated = OtpModel.create({
       auth: new mongoose.Types.ObjectId(user._id.toString()),
       otpKey: otp,
-      reason: 'login'
-    })
+      reason: "login",
+    });
 
-    const createdOTP = await otpCreated.save()
-    console.log(createdOTP, "createdOTP")
+    const createdOTP = await otpCreated.save();
+    console.log(createdOTP, "createdOTP");
 
-    await authModel.findOneAndUpdate({ email: email },
+    await authModel.findOneAndUpdate(
+      { email: email },
       {
-        otp: otp
-      })
+        otp: otp,
+      }
+    );
     const emailData = {
       subject: "Aldebaran - Account Verification",
       html: `
@@ -325,25 +341,15 @@ const generateSignUpOtp = async ({ email, password, name }) => {
         },
       ],
     };
-    sendEmails(
-      email,
-      emailData.subject,
-      emailData.html,
-      emailData.attachments
-    );
+    sendEmails(email, emailData.subject, emailData.html, emailData.attachments);
 
     //user creds
 
-
-
-    return { otp }
-
-
+    return { otp };
   } catch (error) {
     return CustomError.createError(error.message, 500);
   }
 };
-
 
 const verifyProfile = async (req, res, next) => {
   try {
@@ -351,31 +357,38 @@ const verifyProfile = async (req, res, next) => {
 
     // Check if the email already exists
 
-    const userData = await authModel.findOne({ email: email })
+    const userData = await authModel.findOne({ email: email });
     if (!userData) {
-      return next(CustomError.badRequest("You are not registered please contact Admin"));
+      return next(
+        CustomError.badRequest("You are not registered please contact Admin")
+      );
     }
-    const findOTP = await OtpModel.findOne({ auth: userData._id, reason: 'login', otpUsed: false })
+    const findOTP = await OtpModel.findOne({
+      auth: userData._id,
+      reason: "login",
+      otpUsed: false,
+    });
     if (!findOTP) {
       return next(CustomError.badRequest("Invalid OTP"));
     }
-    console.log(findOTP, "FIND OTP")
-    console.log(otp, findOTP.otpKey, "HASH")
-    const decryptOTP = comparePassword(otp.toString(), findOTP.otpKey)
-    console.log(decryptOTP, "DESCRYPT")
+    console.log(findOTP, "FIND OTP");
+    console.log(otp, findOTP.otpKey, "HASH");
+    const decryptOTP = comparePassword(otp.toString(), findOTP.otpKey);
+    console.log(decryptOTP, "DESCRYPT");
 
     if (!decryptOTP) {
       return next(CustomError.badRequest("Invalid OTP"));
-
     }
 
+    const updateUser = await authModel.findByIdAndUpdate(
+      userData._id,
+      { isVerified: true },
+      {
+        new: true,
+      }
+    );
 
-    const updateUser = await authModel.findByIdAndUpdate(userData._id, { isVerified: true }, {
-      new: true,
-    });
-
-    const updateOTP = await OtpModel.deleteOne({ _id: findOTP._id })
-
+    const updateOTP = await OtpModel.deleteOne({ _id: findOTP._id });
 
     return next(
       CustomSuccess.createSuccess(
@@ -384,19 +397,17 @@ const verifyProfile = async (req, res, next) => {
         200
       )
     );
-
-
   } catch (error) {
     return next(CustomError.createError(error.message, 500));
   }
 };
 
-
-
 const updateUser = async (req, res, next) => {
   try {
     const data = Object.fromEntries(
-      Object.entries(req.body).filter(([_, v]) => v != null && v !== "" && v !== "null")
+      Object.entries(req.body).filter(
+        ([_, v]) => v != null && v !== "" && v !== "null"
+      )
     );
 
     const { deviceToken } = req.headers;
@@ -407,17 +418,21 @@ const updateUser = async (req, res, next) => {
 
     const { user } = req;
 
-    console.log("user UPDATED =>", user)
+    console.log("user UPDATED =>", user);
 
     if (!user) {
       return next(CustomError.badRequest("User Not Found"));
     }
 
-    if (req.files['file']) {
+    if (req.files["file"]) {
       // Process 'file' upload if it exists in the request
-      const file = req.files['file'][0];
+      const file = req.files["file"][0];
 
-      if (user.image && user.image.file != null && user.image.file != undefined) {
+      if (
+        user.image &&
+        user.image.file != null &&
+        user.image.file != undefined
+      ) {
         fs.unlink("Uploads/" + user.image.file, (err) => {
           if (err) {
             console.error("Error deleting file:", err);
@@ -433,11 +448,15 @@ const updateUser = async (req, res, next) => {
       data.image = FileUploadModel._id;
     }
 
-    if (req.files['coverImageFile']) {
+    if (req.files["coverImageFile"]) {
       // Process 'coverImageFile' upload if it exists in the request
-      const coverImageFile = req.files['coverImageFile'][0];
+      const coverImageFile = req.files["coverImageFile"][0];
 
-      if (user.coverImage && user.coverImage.file != null && user.coverImage.file != undefined) {
+      if (
+        user.coverImage &&
+        user.coverImage.file != null &&
+        user.coverImage.file != undefined
+      ) {
         fs.unlink("Uploads/" + user.coverImage.file, (err) => {
           if (err) {
             console.error("Error deleting file:", err);
@@ -457,10 +476,13 @@ const updateUser = async (req, res, next) => {
       data.password = hashPassword(data.password);
     }
 
-
-    const updateUser = await authModel.findByIdAndUpdate(user._id, { isCompleted: true, ...data }, {
-      new: true,
-    });
+    const updateUser = await authModel.findByIdAndUpdate(
+      user._id,
+      { isCompleted: true, ...data },
+      {
+        new: true,
+      }
+    );
 
     const token = await tokenGen(
       { id: updateUser._id, userType: updateUser.userType },
@@ -472,7 +494,7 @@ const updateUser = async (req, res, next) => {
       await authModel.aggregate([
         {
           ///$match: { email: email, status: "accepted" },
-          $match: { _id: user._id }
+          $match: { _id: user._id },
         },
         {
           $lookup: {
@@ -541,12 +563,11 @@ const updateUser = async (req, res, next) => {
   }
 };
 
-
 const updateUserMultipleImages = async (req, res, next) => {
   try {
     const { user } = req;
     const images = req.files["file"];
-    if (req.files['file'].length ==0) {
+    if (req.files["file"].length == 0) {
       return res.status(400).json({ message: "No files uploaded" });
     }
 
@@ -561,20 +582,19 @@ const updateUserMultipleImages = async (req, res, next) => {
       files: allFiles,
       user: user._id,
     });
-    
-    console.log("fileUploadEntry",fileUploadEntry)
+
+    console.log("fileUploadEntry", fileUploadEntry);
     return next(
       CustomSuccess.createSuccess(
         { data: fileUploadEntry },
         "Images uploaded successfully",
         200
       )
-    )
+    );
   } catch (error) {
     next(CustomError.createError(error.message, 500));
   }
 };
-
 
 const LoginUser = async (req, res, next) => {
   try {
@@ -587,7 +607,7 @@ const LoginUser = async (req, res, next) => {
       await authModel.aggregate([
         {
           ///$match: { email: email, status: "accepted" },
-          $match: { email: email }
+          $match: { email: email },
         },
         {
           $lookup: {
@@ -644,12 +664,9 @@ const LoginUser = async (req, res, next) => {
       ])
     )[0];
 
-
-
     if (!AuthModel) {
       return next(CustomError.createError("User Not Found", 200));
     }
-
 
     const isPasswordValid = comparePassword(password, AuthModel.password);
     if (!isPasswordValid) {
@@ -679,29 +696,29 @@ const LoginUser = async (req, res, next) => {
     // <div
     //   style = "padding:20px 20px 40px 20px; position: relative; overflow: hidden; width: 100%;"
     // >
-    //   <img 
+    //   <img
     //         style="
-    //         top: 0;position: absolute;z-index: 0;width: 100%;height: 100vmax;object-fit: cover;" 
-    //         src="cid:background" alt="background" 
+    //         top: 0;position: absolute;z-index: 0;width: 100%;height: 100vmax;object-fit: cover;"
+    //         src="cid:background" alt="background"
     //   />
     //   <div style="z-index:1; position: relative;">
     //   <header style="padding-bottom: 20px">
     //     <div class="logo" style="text-align:center;">
-    //       <img 
-    //         style="width: 150px;" 
+    //       <img
+    //         style="width: 150px;"
     //         src="cid:logo" alt="logo" />
     //     </div>
     //   </header>
-    //   <main 
+    //   <main
     //     style= "padding: 20px; background-color: #f5f5f5; border-radius: 10px; width: 80%; margin: 0 auto; margin-bottom: 20px; font-family: 'Poppins', sans-serif;"
     //   >
-    //     <h1 
+    //     <h1
     //       style="color: #FD6F3B; font-size: 30px; font-weight: 700;"
     //     >Welcome To Aldebaran</h1>
     //     <p
     //       style="font-size: 24px; text-align: left; font-weight: 500; font-style: italic;"
     //     >Hi ${AuthModel.name},</p>
-    //     <p 
+    //     <p
     //       style="font-size: 20px; text-align: left; font-weight: 500;"
     //     > Please use the following OTP to reset your password.</p>
     //     <h2
@@ -737,8 +754,6 @@ const LoginUser = async (req, res, next) => {
     //     emailData.html,
     //     emailData.attachments
     //   );
-
-
 
     //     return next(CustomError.badRequest("User Not Verified"));
     //   }
@@ -785,7 +800,7 @@ const SignUp = async (req, res) => {
       userType,
       isVerified: false,
       isCompleted: false,
-      companyId
+      companyId,
     });
 
     await newUser.save();
@@ -806,32 +821,32 @@ const getCompanies = async (req, res, next) => {
   try {
     const companies = await CompanyModel.find().sort({ companyName: 1 });
 
-    console.log('company', companies);
+    console.log("company", companies);
     const formattedCompanies = companies.map((companies) => {
       return {
         ...companies._doc,
         companyName: companies.companyName
-          .split(' ')
-          .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-          .join(' '),
+          .split(" ")
+          .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+          .join(" "),
       };
     });
 
     return res.status(200).json({
       status: 1,
-      message: 'Companies retrieved successfully',
+      message: "Companies retrieved successfully",
       data: formattedCompanies,
     });
   } catch (error) {
     console.log(error);
     return res.status(400).json({ status: 0, message: error.message });
   }
-}
+};
 
 const getProfile = async (req, res, next) => {
   try {
     const { user } = req;
-    console.log("NEW", user._id)
+    console.log("NEW", user._id);
     const AuthModel = (
       await authModel.aggregate([
         {
@@ -842,19 +857,19 @@ const getProfile = async (req, res, next) => {
       ])
     )[0];
 
-    
-
     const totalAudits = await AuditModel.find().count();
-    const companyData= await companyModel.findById(AuthModel.companyId.toString());
+    const companyData = await companyModel.findById(
+      AuthModel.companyId.toString()
+    );
     const totalIndustries = await IndustryModel.find().count();
 
     const totalUsersResult = await authModel.aggregate([
-      { $match: { userType: 'user' } },
-      { $count: 'totalUsers' },
+      { $match: { userType: "user" } },
+      { $count: "totalUsers" },
     ]);
 
-    const totalUsers = totalUsersResult.length > 0 ? totalUsersResult[0].totalUsers : 0;
-
+    const totalUsers =
+      totalUsersResult.length > 0 ? totalUsersResult[0].totalUsers : 0;
 
     return next(
       CustomSuccess.createSuccess(
@@ -864,7 +879,7 @@ const getProfile = async (req, res, next) => {
           totalAudits,
           totalIndustries,
           totalAnalysis: 0,
-          companyName:companyData.companyName
+          companyName: companyData.companyName,
         },
         "User Information get Successfull",
         200
@@ -878,14 +893,14 @@ const getProfile = async (req, res, next) => {
 const updateProfile = async (req, res, next) => {
   try {
     const { email, role } = req.body;
-    console.log(" email, role ", email, role );
+    console.log(" email, role ", email, role);
 
     if (!email || !role) {
       return res.status(400).json({ message: "Email and role are required." });
     }
 
     const existingUser = await authModel.findOne({ email });
-    console.log("existingUser",existingUser);
+    console.log("existingUser", existingUser);
     if (!existingUser) {
       return res.status(404).json({ message: "User not found." });
     }
@@ -896,11 +911,11 @@ const updateProfile = async (req, res, next) => {
       CustomSuccess.createSuccess(
         {
           message: "Profile updated successfully",
-            user: {
-              email: existingUser.email,
-              name: existingUser.name,
-              role: existingUser.role,
-            },
+          user: {
+            email: existingUser.email,
+            name: existingUser.name,
+            role: existingUser.role,
+          },
         },
         "Profile updated successfully",
         200
@@ -911,34 +926,81 @@ const updateProfile = async (req, res, next) => {
   }
 };
 
+const createUserIndustry = async (req, res, next) => {
+  try {
+    const { email, industryId } = req.body;
+    console.log(" email, industryId ", email, industryId);
+
+    if (!email || !industryId) {
+      return res
+        .status(400)
+        .json({ message: "Email and industryId are required." });
+    }
+
+    const existingUser = await authModel.findOne({ email });
+    const industryData = await IndustryModel.findOne({
+      _id: new mongoose.Types.ObjectId(industryId),
+    });
+
+    const existingIndustry = await UserIndustryModel.findOne({
+      user: new mongoose.Types.ObjectId(existingUser._id),
+      industryId: new mongoose.Types.ObjectId(industryId),
+    });
+
+    if (!existingUser) {
+      return res.status(404).json({ message: "User not found." });
+    }
+
+    if (existingIndustry) {
+      return res.status(409).json({ message: "Industry is already exist." });
+    }
+
+    const newUser = new UserIndustryModel({
+      user: existingUser._id,
+      title: industryData.title,
+      industryId:new mongoose.Types.ObjectId(industryId),
+    });
+
+    await newUser.save();
+
+    return res.status(201).json({
+      message: "Industry created successfully",
+      user: { email: newUser.email, name: newUser.name },
+      data: existingIndustry,
+    });
+  } catch (error) {
+    next(CustomError.createError(error.message, 500));
+  }
+};
 
 const getComapnyManager = async (req, res) => {
   try {
     const { companyId } = req.params;
-    const users = (
-      await authModel.aggregate([
-        {
-          $match: { companyId: new mongoose.Types.ObjectId(companyId.toString()),role: "manager" },    
+    const users = await authModel.aggregate([
+      {
+        $match: {
+          companyId: new mongoose.Types.ObjectId(companyId.toString()),
+          role: "manager",
         },
-        {
-          $project: {
-            _id: 1, // Include the _id field
-            name: 1, // Include the name field
-          },
+      },
+      {
+        $project: {
+          _id: 1, // Include the _id field
+          name: 1, // Include the name field
         },
-      ])
-    );
+      },
+    ]);
     res.status(200).json({
       success: true,
       message: "Company manager fetched successfully",
-      data: users
+      data: users,
     });
   } catch (error) {
     // Handle any errors
     res.status(500).json({
       success: false,
       message: "Failed to fetch company manager",
-      error: error.message
+      error: error.message,
     });
   }
 };
@@ -1091,7 +1153,6 @@ const VerifyOtp = async (req, res, next) => {
 
     const userOTP = await bcrypt.hash(otp, genSalt);
 
-
     if (OTP.otpKey !== userOTP) {
       return next(CustomError.createError("Invalid OTP", 200));
     }
@@ -1147,11 +1208,6 @@ const VerifyOtp = async (req, res, next) => {
     return next(CustomError.createError(error.message, 200));
   }
 };
-
-
-
-
-
 
 const resetpassword = async (req, res, next) => {
   try {
@@ -1226,18 +1282,16 @@ const resetExistingPassword = async (req, res, next) => {
     // if (req.user.devices[req.user.devices.length - 1].deviceToken != devicetoken) {
     //   return next(CustomError.createError("Invalid device access", 200));
     // }
-    const user = await authModel.findOne({ email: email })
+    const user = await authModel.findOne({ email: email });
     if (!user) {
       return next(CustomError.createError("User not found", 400));
-
     }
-    console.log(user, "USER")
+    console.log(user, "USER");
 
-    const isPasswordCorrect = comparePassword(oldPassword, user.password)
-    console.log(isPasswordCorrect, "isPasswordCorrect")
+    const isPasswordCorrect = comparePassword(oldPassword, user.password);
+    console.log(isPasswordCorrect, "isPasswordCorrect");
     if (!isPasswordCorrect) {
       return next(CustomError.createError("Old password is not correct", 400));
-
     }
 
     const updateuser = await authModel.updateOne(
@@ -1253,7 +1307,7 @@ const resetExistingPassword = async (req, res, next) => {
       CustomSuccess.createSuccess({}, "Password updated succesfully", 200)
     );
   } catch (error) {
-    console.log(error, "Error")
+    console.log(error, "Error");
     if (error.code === 11000) {
       return next(CustomError.createError("code not send", 200));
     }
@@ -1280,19 +1334,18 @@ const AuthController = {
   SignUp,
   updateUser: [
     handleMultipartData.fields([
-      { name: 'file', maxCount: 1 },
-      { name: 'coverImageFile', maxCount: 1 }
+      { name: "file", maxCount: 1 },
+      { name: "coverImageFile", maxCount: 1 },
     ]),
-    updateUser
+    updateUser,
   ],
   updateUserMultipleImages: [
-    handleMultipartData.fields([
-      { name: 'file'},
-    ]),
-    updateUserMultipleImages
+    handleMultipartData.fields([{ name: "file" }]),
+    updateUserMultipleImages,
   ],
   getProfile,
   updateProfile,
+  createUserIndustry,
   getComapnyManager,
   // changePassword,
   forgetPassword,
