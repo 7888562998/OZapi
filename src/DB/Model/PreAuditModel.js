@@ -21,11 +21,11 @@ const PreAuditSchema = new mongoose.Schema(
       type: Number,
     },
 
-    startTime:{
+    StartTime:{
       type: Date,
       required: true,
     },
-    endTime:{
+    EndTime:{
       type: Date,
       required: true,
     },
