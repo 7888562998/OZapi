@@ -167,14 +167,14 @@ const CreateStartStudy = async (req, res, next) => {
     const preAuditInstances = [];
 
     for (const preAuditData of preAuditDataArray) {
-      const { ActivityID, startTime, endTime } = preAuditData;
+      const { ActivityID, StartTime, EndTime } = preAuditData;
 
       const PreAudit = await PreAuditModel.create({
         user: user._id,
         ActivityID,
         caseNumber: newCase.caseNumber,
-        startTime,
-        endTime,
+        StartTime,
+        EndTime,
       });
 
       preAuditInstances.push(PreAudit);
@@ -282,8 +282,6 @@ const CreateAudit = async (req, res, next) => {
       PreAuditId,
       StartTime,
       EndTime,
-      from,
-      to,
     } = req.body;
 
     if (!mongoose.isValidObjectId(ActivityID)) {
@@ -367,8 +365,8 @@ const CreateAudit = async (req, res, next) => {
     }
     
     
-     const startingTime = new Date(from);
-     const endTime = new Date(to);
+     const startingTime = new Date(StartTime);
+     const endTime = new Date(EndTime);
      const totalDuration = endTime - startingTime;
      
     const PreauditRecord = await PreAuditModel.findOne({
@@ -376,8 +374,8 @@ const CreateAudit = async (req, res, next) => {
       caseNumber: caseNumber
     });
 
-    const preStartingTime = new Date(PreauditRecord.startTime);
-    const preEndTime = new Date(PreauditRecord.endTime);
+    const preStartingTime = new Date(PreauditRecord.StartTime);
+    const preEndTime = new Date(PreauditRecord.EndTime);
     
     const elapsedDuration = preEndTime - preStartingTime;
     const percentage = Math.abs((elapsedDuration / totalDuration) * 100);
@@ -411,8 +409,6 @@ const CreateAudit = async (req, res, next) => {
       StartTime,
       EndTime,
       PreauditID: PreAuditId,
-      from,
-      to,
     });
 
     const newPreAudit = await AuditModel.find({ caseNumber: caseNumber });

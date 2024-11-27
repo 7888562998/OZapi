@@ -13,11 +13,11 @@ const AuditSchema = new mongoose.Schema(
       required: false,
     },
     StartTime: {
-      type: String,
+      type: Date,
       required: true,
     },
     EndTime: {
-      type: String,
+      type: Date,
       required: true,
     },
     Documents: {
@@ -47,14 +47,6 @@ const AuditSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       required: true,
       ref: "PreAudit",
-    },
-    from: {
-      type: Date,
-      default: Date.now,
-    },
-    to: {
-      type: Date,
-      required: false,
     },
     Nonvalueadded: {
       enum: ['Behaviour', 'Skills', 'System', 'Technical']
