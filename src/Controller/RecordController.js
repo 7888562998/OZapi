@@ -86,10 +86,10 @@ function calculatePercentage({ preAuditRecords, auditRecords }) {
   preAuditRecords.forEach((el) => {
     auditRecords.forEach((jl) => {
       if (el._id.toString() === jl.PreauditID.toString()) {
-        let preAuditStartTime = new Date('1970-01-01T' + el.StartTime)
-        let auditStartTime = new Date('1970-01-01T' + jl.StartTime)
-        let preAuditEndTime = new Date('1970-01-01T' + el.EndTime)
-        let auditEndTime = new Date('1970-01-01T' + jl.EndTime)
+        let preAuditStartTime = new Date(el.StartTime)
+        let auditStartTime = new Date(jl.StartTime)
+        let preAuditEndTime = new Date(el.EndTime)
+        let auditEndTime = new Date(jl.EndTime)
 
         console.log(preAuditStartTime, "preAuditStartTime")
         console.log(preAuditEndTime, "preAuditEndTime")
