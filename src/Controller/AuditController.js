@@ -199,6 +199,40 @@ const CreateStartStudy = async (req, res, next) => {
   }
 };
 
+const UpdateStartStudy = async (req, res, next) => {
+  try {
+    const { user } = req;
+    const { preAuditData, caseNumber } = req.body;
+ 
+      const { ActivityID, StartTime, EndTime } = preAuditData;
+      if (!ActivityID || !StartTime || !EndTime) {
+        return res
+          .status(400)
+          .json({ message: "Missing required fields in preAuditData." });
+      }
+
+      await PreAuditModel.updateOne(
+        {
+          user: user._id,
+          caseNumber,
+          ActivityID: ActivityID,
+        },
+        {
+          $set: {
+            StartTime: StartTime,
+            EndTime: EndTime,
+          },
+        }
+      );
+    return res
+      .status(200)
+      .json({ message: "Pre-audit data updated successfully." });
+  } catch (error) {
+    console.error("Error updating pre-audit data:", error);
+    return res.status(500).json({ message: "Internal server error." });
+  }
+};
+
 const getStartStudy = async (req, res, next) => {
   try {
     const { user } = req;
@@ -363,23 +397,21 @@ const CreateAudit = async (req, res, next) => {
         Recording.push(FileUploadModel._id);
       }
     }
-    
-    
-     const startingTime = new Date(StartTime);
-     const endTime = new Date(EndTime);
-     const totalDuration = endTime - startingTime;
-     
+
+    const startingTime = new Date(StartTime);
+    const endTime = new Date(EndTime);
+    const totalDuration = endTime - startingTime;
+
     const PreauditRecord = await PreAuditModel.findOne({
       ActivityID: ActivityID,
-      caseNumber: caseNumber
+      caseNumber: caseNumber,
     });
 
     const preStartingTime = new Date(PreauditRecord.StartTime);
     const preEndTime = new Date(PreauditRecord.EndTime);
-    
+
     const elapsedDuration = preEndTime - preStartingTime;
     const percentage = Math.abs((elapsedDuration / totalDuration) * 100);
-    
 
     const updatedRecord = await PreAuditModel.findOneAndUpdate(
       {
@@ -387,7 +419,7 @@ const CreateAudit = async (req, res, next) => {
         caseNumber: caseNumber,
       },
       {
-        $set: {   
+        $set: {
           totalPercentage: percentage,
         },
       },
@@ -396,7 +428,6 @@ const CreateAudit = async (req, res, next) => {
         runValidators: true,
       }
     );
-
 
     const Audit = await AuditModel.create({
       user: user._id,
@@ -513,6 +544,7 @@ const getAudit = async (req, res, next) => {
 const AuditController = {
   CreatePreAudit,
   CreateStartStudy,
+  UpdateStartStudy,
   getStartStudy,
   getStartStudyByCaseNumber,
   CreateNonValueAdded,

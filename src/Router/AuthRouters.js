@@ -44,6 +44,7 @@ AuthRouters.prefix("/user", AuthMiddleware, async function () {
  AuthRouters.route("/getsubactivity/:id").get(ActivityController.getActivityforCase);  
  AuthRouters.route("/createpreaudit").post(AuditController.CreatePreAudit);
  AuthRouters.route("/createStartStudy").post(AuditController.CreateStartStudy);
+ AuthRouters.route("/updateStartStudy").post(AuditController.UpdateStartStudy);
  AuthRouters.route("/getStartStudy").get(AuditController.getStartStudy);
  AuthRouters.route("/getStartStudy/:caseNumber").get(AuditController.getStartStudyByCaseNumber);
  AuthRouters.route("/getNonActivites/:PreAuditId").get(AuditController.getNonActivites);   
