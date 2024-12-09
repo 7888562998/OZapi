@@ -23,11 +23,11 @@ const PreAuditSchema = new mongoose.Schema(
 
     StartTime:{
       type: Date,
-      required: true,
+      default: null,
     },
     EndTime:{
       type: Date,
-      required: true,
+      default: null,
     },
     totalPercentage: {
       type: Number,
