@@ -171,9 +171,9 @@ const createIndustry = async (req, res) => {
 
 const createRoles = async (req, res) => {
   try {
-    const { title, IndustryID } = req.body;
+    const { title, IndustryID, Cost } = req.body;
 
-    const createRole = await RoleModel.create({ title, IndustryID });
+    const createRole = await RoleModel.create({ title, IndustryID, Cost });
 
 
 
@@ -193,9 +193,9 @@ const createRoles = async (req, res) => {
 
 const createActivity = async (req, res) => {
   try {
-    const { title, IndustryID, RoleID } = req.body;
+    const { title, IndustryID, RoleID,Cost } = req.body;
 
-    const createActivity = await ActivityModel.create({ title, IndustryID, RoleID });
+    const createActivity = await ActivityModel.create({ title, IndustryID, RoleID,Cost });
 
 
 

@@ -12,6 +12,10 @@ const RoleSchema = new mongoose.Schema(
       required: true,
       ref: "Industry",
   },
+  Cost: {
+    type: mongoose.Schema.Types.Decimal128,
+    default: 0.0,
+  },
   
   },
   {
