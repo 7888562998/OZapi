@@ -84,7 +84,8 @@ AdminRouters.route("/getActivity").post(AdminController.getActivitybyRoles);
 
 
   AdminRouters.route("/industry").get(AdminController.getAllIndustries);
-  AdminRouters.route("/getallindustries").get(AdminController.getIndustries);
+  // AdminRouters.route("/getallindustries").get(AdminController.getIndustries);
+  AdminRouters.route("/getindustries").get(AdminController.getIndustriesByfireBase);
 
 
   AdminRouters.route("/privacy")

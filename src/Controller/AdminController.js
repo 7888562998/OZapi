@@ -316,6 +316,59 @@ const getIndustries = async (req, res) => {
   }
 }
 
+const getIndustriesByfireBase = async (req, res) => {
+  try {
+    const response = await fetch('https://oz-api-prod.azurewebsites.net/api/industryNames/list');
+    if (!response.ok) {
+      throw new Error('Failed to fetch industries');
+    }
+    const industriesbyfireBase = await response.json();
+    console.log(industriesbyfireBase.data,"industriesdata[0]");
+   
+    for (const industry of industriesbyfireBase.data) {
+      const existingIndustry = await IndustryModel.findOne({ title: industry.title });
+
+      // If the industry doesn't exist, insert it
+      if (!existingIndustry) {
+        await IndustryModel.create({
+          title: industry.title
+            .split(' ')
+            .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+            .join(' '),
+        });
+      }
+    }
+
+    const industryTitles = industriesbyfireBase.data.map((industry) => industry.title);
+
+    // Find matching industries from IndustryModel
+    const matchingIndustries = await IndustryModel.find({
+      title: { $in: industryTitles },
+    }).sort({ title: 1 });
+
+
+    // const Industriestable = await IndustryModel.find().sort({ title: 1 });
+
+    const formattedIndustries = matchingIndustries.map((industry) => {
+      return {
+        ...industry._doc,
+        title: industry.title
+          .split(' ')
+          .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+          .join(' '),
+      };
+    });
+
+    return res.status(200).json({
+      status: 1,
+      message: 'Industries retrieved successfully',
+      data: formattedIndustries,
+    });
+  } catch (error) {
+    console.log(error);
+    return res.status(400).json({ status: 0, message: error.message });
+  }
+}
 
 
 const getAllRoles = async (req, res) => {
@@ -923,7 +976,8 @@ const AdminController = {
   getUsersAnalytics,
   getUserCases,
   getDashboardKpis,
-  getIndustries
+  getIndustries,
+  getIndustriesByfireBase
 };
 
 export default AdminController;
