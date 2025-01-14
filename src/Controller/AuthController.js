@@ -604,8 +604,8 @@ const LoginUser = async (req, res, next) => {
       return next(CustomError.badRequest(error.details[0].message));
     }
     const { email, password, deviceType, deviceToken } = req.body;
-    const query= `SELECT * FROM auths WHERE email = $1`;
-    const result = await pool.query(query,[email]);
+    const query = `SELECT * FROM auths WHERE email = $1`;
+    const result = await pool.query(query, [email]);
     if (result.rows.length === 0) {
       return next(CustomError.createError("User Not Found", 200));
     }
@@ -617,7 +617,7 @@ const LoginUser = async (req, res, next) => {
     }
 
     // const device = await linkUserDevice(AuthModel._id, deviceToken, deviceType);
-   // console.log("device1234",device);
+    // console.log("device1234",device);
     // if (device.error) {
     //   return next(CustomError.createError(device.error, 200));
     // }
@@ -641,39 +641,76 @@ const LoginUser = async (req, res, next) => {
 };
 
 
-const SignUp = async (req, res) => {
+// const SignUp = async (req, res) => {
+//   try {
+//     const { email, password, name, userType, companyId } = req.body;
+
+//     const existingUser = await authModel.findOne({ email });
+//     if (existingUser) {
+//       return res
+//         .status(400)
+//         .json({ message: "User with this email already exists." });
+//     }
+
+//     const hashedPassword = hashPassword(password);
+//     const newUser = new authModel({
+//       email,
+//       password: hashedPassword,
+//       name,
+//       userType,
+//       isVerified: false,
+//       isCompleted: false,
+//       companyId,
+//     });
+
+//     await newUser.save();
+
+//     return res.status(201).json({
+//       message: "User registered successfully",
+//       user: { email: newUser.email, name: newUser.name },
+//     });
+//   } catch (error) {
+//     console.error(error);
+//     if (!res.headersSent) {
+//       return res.status(500).json({ message: "Error registering user" });
+//     }
+//   }
+// };
+
+
+const SignUp = async (req, res, next) => {
   try {
     const { email, password, name, userType, companyId } = req.body;
 
-    const existingUser = await authModel.findOne({ email });
-    if (existingUser) {
-      return res
-        .status(400)
-        .json({ message: "User with this email already exists." });
+    const checkUserQuery = `SELECT * FROM auths WHERE email = $1`;
+    const checkUserResult = await pool.query(checkUserQuery, [email]);
+
+    if (checkUserResult.rows.length > 0) {
+      return next(CustomError.badRequest("User with this email already exists."));
     }
 
     const hashedPassword = hashPassword(password);
-    const newUser = new authModel({
-      email,
-      password: hashedPassword,
-      name,
-      userType,
-      isVerified: false,
-      isCompleted: false,
-      companyId,
-    });
 
-    await newUser.save();
+    const insertUserQuery = `
+    INSERT INTO auths (email, password, name, "userType", "isVerified", "isCompleted", "companyId")
+    VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *;
+  `;
 
-    return res.status(201).json({
-      message: "User registered successfully",
-      user: { email: newUser.email, name: newUser.name },
-    });
+    const values = [email, hashedPassword, name, userType, false, false, companyId];
+    const insertResult = await pool.query(insertUserQuery, values);
+
+    const newUser = insertResult.rows[0];
+
+    return next(
+      CustomSuccess.createSuccess(
+        { email: newUser.email, name: newUser.name },
+        "User registered successfully",
+        201
+      )
+    );
   } catch (error) {
     console.error(error);
-    if (!res.headersSent) {
-      return res.status(500).json({ message: "Error registering user" });
-    }
+    next(CustomError.createError(error.message, 500));
   }
 };
 
@@ -708,12 +745,12 @@ const getProfile = async (req, res, next) => {
     const { user } = req;
 
     const authsQuery = `SELECT * FROM auths WHERE _id = $1`;
-    const _id =user._id.toString();
+    const _id = user._id.toString();
     var AuthModel = await pool.query(authsQuery, [_id]);
     AuthModel = AuthModel.rows[0];
 
     const auditsQuery = `SELECT COUNT(*) FROM audits WHERE userid = $1`;
-    const userid =user._id.toString();
+    const userid = user._id.toString();
     var totalAudits = await pool.query(auditsQuery, [userid]);
     totalAudits = totalAudits.rows[0].count;
 
@@ -724,11 +761,11 @@ const getProfile = async (req, res, next) => {
     const IndustriesQuery = `SELECT COUNT(*) FROM audits WHERE userid = $1`;
     var totalAudits = await pool.query(IndustriesQuery, [userid]);
     totalAudits = totalAudits.rows[0].count;
-    
+
     const userindustryQuery = `SELECT COUNT(*) FROM userindustries WHERE userid = $1`;
     var totalIndustries = await pool.query(userindustryQuery, [userid]);
     totalIndustries = totalIndustries.rows[0].count;
-    console.log(totalIndustries,"totalIndustries");
+    console.log(totalIndustries, "totalIndustries");
 
     // const totalUsersResult = await authModel.aggregate([
     //   { $match: { userType: "user" } },
@@ -843,7 +880,7 @@ const createUserIndustry = async (req, res, next) => {
 const getUserIndustry = async (req, res) => {
   try {
     const userId = req.user._id;
-    const Industries = await UserIndustryModel.find({ user: userId});
+    const Industries = await UserIndustryModel.find({ user: userId });
     res.status(200).json({
       success: true,
       message: "Industries fetched successfully",
