@@ -323,13 +323,12 @@ const getIndustriesByfireBase = async (req, res) => {
       throw new Error('Failed to fetch industries');
     }
     const industriesbyfireBase = await response.json();
-    console.log(industriesbyfireBase.data,"industriesdata[0]");
-   
+
     for (const industry of industriesbyfireBase.data) {
       const existingIndustry = await IndustryModel.findOne({ title: industry.title });
-
       // If the industry doesn't exist, insert it
-      if (!existingIndustry) {
+      
+      if (existingIndustry ==null) {
         await IndustryModel.create({
           title: industry.title
             .split(' ')
