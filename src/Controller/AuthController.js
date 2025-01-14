@@ -899,20 +899,11 @@ const getUserIndustry = async (req, res) => {
 const getComapnyManager = async (req, res) => {
   try {
     const { companyId } = req.params;
-    const users = await authModel.aggregate([
-      {
-        $match: {
-          companyId: new mongoose.Types.ObjectId(companyId.toString()),
-          role: "manager",
-        },
-      },
-      {
-        $project: {
-          _id: 1, // Include the _id field
-          name: 1, // Include the name field
-        },
-      },
-    ]);
+  
+    const authsQuery = `SELECT _id,name FROM auths WHERE "companyId" = $1 and role= $2`;
+    
+    var users = await pool.query(authsQuery, [companyId,"manager"]);
+    users = users.rows;
     res.status(200).json({
       success: true,
       message: "Company manager fetched successfully",
