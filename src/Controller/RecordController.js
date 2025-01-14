@@ -10,7 +10,7 @@ import AuditModel from "../DB/Model/AuditModel.js";
 import NonValueActivtyModel from "../DB/Model/NonValueActivity.js";
 import ActivityModel from "../DB/Model/activityModel.js";
 import { getTotalMinutes } from "../Utils/getTotalMinutes.js";
-
+import { pool } from "../DB/PGSql/index.js";
 
 const createRecord = async (req, res, next) => {
   try {
@@ -502,25 +502,51 @@ const MatchPreAuditAndAudit = async (req, res) => {
     });
   }
 };
+
+// const getAllCases = async (req, res) => {
+
+//   try {
+
+//     const user = req.user
+//     console.log(user, "USER")
+//     const cases = await PreAuditModel.aggregate([
+//       { $match: { user: user._id } },
+//       { $group: { _id: { caseNumber: "$caseNumber" } } },
+//       { $sort: { "_id.caseNumber": -1 } }
+//     ])
+//     return res.json(cases);
+//   } catch (error) {
+//     console.error(error);
+//     return res.status(500).json({
+//       success: false,
+//       message: "Internal Server Error",
+//     });
+//   }
+// };
+
 const getAllCases = async (req, res) => {
-
   try {
+    const user = req.user;;
 
-    const user = req.user
-    console.log(user, "USER")
-    const cases = await PreAuditModel.aggregate([
-      { $match: { user: user._id } },
-      { $group: { _id: { caseNumber: "$caseNumber" } } },
-      { $sort: { "_id.caseNumber": -1 } }
-    ])
+    const query = `
+    SELECT "caseNumber"
+    FROM preaudits
+    WHERE "user" = $1
+    GROUP BY "caseNumber"
+    ORDER BY "caseNumber" DESC;
+  `;
 
+    const values = [user._id];
 
+    const { rows: cases } = await pool.query(query, values);
 
+    const transformedCases = cases.map(caseItem => ({
+      _id: {
+        caseNumber: caseItem.caseNumber
+      }
+    }));
 
-    return res.json(cases);
-
-
-
+    return res.json(transformedCases);
   } catch (error) {
     console.error(error);
     return res.status(500).json({
@@ -529,7 +555,6 @@ const getAllCases = async (req, res) => {
     });
   }
 };
-
 
 const RecordController = {
   createRecord,
