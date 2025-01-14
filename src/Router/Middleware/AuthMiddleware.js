@@ -1,4 +1,5 @@
 import authModel from "../../DB/Model/authModel.js";
+import { pool } from "../../DB/PGSql/index.js";
 import { joseJwtDecrypt } from "../../Utils/AccessTokenManagement/Tokens.js";
 import CustomError from "../../Utils/ResponseHandler/CustomError.js";
 export const AuthMiddleware = async (req, res, next) => {
@@ -22,12 +23,14 @@ export const AuthMiddleware = async (req, res, next) => {
     if (!/^Bearer$/i.test(scheme)) {
       return next(CustomError.unauthorized());
     }
-
     const UserToken = await joseJwtDecrypt(token);
-    
-    const UserDetail = await authModel
-      .findOne({ _id: UserToken.payload.uid })
-      .populate("image");
+    const query = `SELECT * FROM auths WHERE _id = $1`;
+    const _id = UserToken.payload.uid;
+    var UserDetail = await pool.query(query, [_id]);
+    UserDetail= UserDetail.rows[0];
+    // const UserDetail = await authModel
+    //   .findOne({ _id: UserToken.payload.uid })
+    //   .populate("image");
 
     if (!UserDetail) {
       return next(CustomError.unauthorized());
@@ -46,8 +49,8 @@ export const AdminMiddleware = async (req, res, next) => {
     req.body.token ||
     req.query.token ||
     req.headers["x-access-token"];
-    console.log("Admin middle ware")
-    
+  console.log("Admin middle ware");
+
   if (!AuthHeader) {
     return next(CustomError.unauthorized());
   }
@@ -76,8 +79,6 @@ export const AdminMiddleware = async (req, res, next) => {
     if (UserDetail.userType !== "admin") {
       return next(CustomError.unauthorized());
     }
-     
-
 
     req.user = UserDetail;
     return next();

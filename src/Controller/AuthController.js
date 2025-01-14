@@ -706,41 +706,43 @@ const getCompanies = async (req, res, next) => {
 const getProfile = async (req, res, next) => {
   try {
     const { user } = req;
-    console.log("NEW", user._id);
-    const AuthModel = (
-      await authModel.aggregate([
-        {
-          $match: { _id: new mongoose.Types.ObjectId(user._id.toString()) },
-        },
 
-        { $limit: 1 },
-      ])
-    )[0];
+    const authsQuery = `SELECT * FROM auths WHERE _id = $1`;
+    const _id =user._id.toString();
+    var AuthModel = await pool.query(authsQuery, [_id]);
+    AuthModel = AuthModel.rows[0];
 
-    const totalAudits = await AuditModel.find({
-      user: new mongoose.Types.ObjectId(user._id.toString()),
-    }).count();
+    const auditsQuery = `SELECT COUNT(*) FROM audits WHERE userid = $1`;
+    const userid =user._id.toString();
+    var totalAudits = await pool.query(auditsQuery, [userid]);
+    totalAudits = totalAudits.rows[0].count;
 
-    const companyData = await companyModel.findById(
-      AuthModel.companyId.toString()
-    );
-    const totalIndustries = await UserIndustryModel.find({
-      user: new mongoose.Types.ObjectId(user._id.toString()),
-    }).count();
+    const companyQuery = `SELECT * FROM companies WHERE _id = $1`;
+    var companyData = await pool.query(companyQuery, [AuthModel.companyId]);
+    companyData = companyData.rows[0];
 
-    const totalUsersResult = await authModel.aggregate([
-      { $match: { userType: "user" } },
-      { $count: "totalUsers" },
-    ]);
+    const IndustriesQuery = `SELECT COUNT(*) FROM audits WHERE userid = $1`;
+    var totalAudits = await pool.query(IndustriesQuery, [userid]);
+    totalAudits = totalAudits.rows[0].count;
+    
+    const userindustryQuery = `SELECT COUNT(*) FROM userindustries WHERE userid = $1`;
+    var totalIndustries = await pool.query(userindustryQuery, [userid]);
+    totalIndustries = totalIndustries.rows[0].count;
+    console.log(totalIndustries,"totalIndustries");
 
-    const totalUsers =
-      totalUsersResult.length > 0 ? totalUsersResult[0].totalUsers : 0;
+    // const totalUsersResult = await authModel.aggregate([
+    //   { $match: { userType: "user" } },
+    //   { $count: "totalUsers" },
+    // ]);
+
+    // const totalUsers =
+    //   totalUsersResult.length > 0 ? totalUsersResult[0].totalUsers : 0;
 
     return next(
       CustomSuccess.createSuccess(
         {
           ...AuthModel,
-          totalUsers,
+          // totalUsers,
           totalAudits,
           totalIndustries,
           totalAnalysis: 0,
