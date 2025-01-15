@@ -2,8 +2,6 @@ import CustomError from "../Utils/ResponseHandler/CustomError.js";
 import CustomSuccess from "../Utils/ResponseHandler/CustomSuccess.js";
 import fileUploadModel from "../DB/Model/fileUploadModel.js";
 import { handleMultipartData } from "../Utils/MultipartData.js";
-import RecordModel from "../DB/Model/recordModel.js";
-import NotificationController from "./NotificationController.js";
 import mongoose from "mongoose";
 import ActivityModel from "../DB/Model/activityModel.js";
 import SubActivityModel from "../DB/Model/subActivityModel.js";
@@ -13,6 +11,7 @@ import CaseNumberModel from "../DB/Model/caseNumber.js";
 import authModel from "../DB/Model/authModel.js";
 import NonValueActivtyModel from "../DB/Model/NonValueActivity.js";
 import { getTotalMinutes } from "../Utils/getTotalMinutes.js";
+import { pool } from "../DB/PGSql/index.js";
 
 const validateItemFormat = (item) => {
   if (!Array.isArray(item)) {
@@ -157,40 +156,39 @@ const CreateStartStudy = async (req, res, next) => {
     const { user } = req;
 
     const preAuditDataArray = req.body;
-    const findCaseNumber = await CaseNumberModel.findOne().sort("-caseNumber");
-    const newCase = await CaseNumberModel.create({
-      caseNumber: findCaseNumber ? findCaseNumber.caseNumber + 1 : 1,
-    });
+    const caseNumberQuery = `SELECT * FROM casenumbers ORDER BY "caseNumber" DESC LIMIT 1`;
+    var findCaseNumber = await pool.query(caseNumberQuery);
+    findCaseNumber = findCaseNumber.rows[0];
 
-    // Assuming req.body is an array of PreAudit data
+    const insertNewCaseQuery = `INSERT INTO casenumbers ("caseNumber") VALUES ($1) RETURNING *;`;
+    const newCaseNumber = findCaseNumber ? findCaseNumber.caseNumber + 1 : 1;
+    await pool.query(insertNewCaseQuery, [newCaseNumber]);
 
     const preAuditInstances = [];
 
     for (const preAuditData of preAuditDataArray) {
       const { ActivityID, StartTime, EndTime } = preAuditData;
+      const insertPreAuditQuery = `INSERT INTO preaudits ("user", "ActivityID", "caseNumber","StartTime","EndTime") VALUES ($1, $2, $3,$4,$5) RETURNING *;`;
 
-      const PreAudit = await PreAuditModel.create({
-        user: user._id,
+      const preauditsaved = await pool.query(insertPreAuditQuery, [
+        user._id,
         ActivityID,
-        caseNumber: newCase.caseNumber,
+        newCaseNumber,
         StartTime,
         EndTime,
-      });
+      ]);
 
-      preAuditInstances.push(PreAudit);
+      preAuditInstances.push(preauditsaved.rows[0]);
     }
 
-    await authModel.findByIdAndUpdate(
-      user._id,
-      { currentCase: newCase.caseNumber },
-      {
-        new: true,
-      }
-    );
+    const updateQuery = `UPDATE auths SET "currentCase" = $1 WHERE _id = $2 RETURNING *;`;
+
+    const updatedcase=await pool.query(updateQuery, [newCaseNumber, user._id]);
+    console.log(updatedcase,"updatedcase");
     return res.status(200).json({
       status: 1,
       message: "Pre-Audit(s) created successfully",
-      caseNumber: newCase.caseNumber,
+      caseNumber: newCaseNumber,
       data: preAuditInstances,
     });
   } catch (error) {
@@ -203,27 +201,27 @@ const UpdateStartStudy = async (req, res, next) => {
   try {
     const { user } = req;
     const { preAuditData, caseNumber } = req.body;
- 
-      const { ActivityID, StartTime, EndTime } = preAuditData;
-      if (!ActivityID || !StartTime || !EndTime) {
-        return res
-          .status(400)
-          .json({ message: "Missing required fields in preAuditData." });
-      }
 
-      await PreAuditModel.updateOne(
-        {
-          user: user._id,
-          caseNumber,
-          ActivityID: ActivityID,
+    const { ActivityID, StartTime, EndTime } = preAuditData;
+    if (!ActivityID || !StartTime || !EndTime) {
+      return res
+        .status(400)
+        .json({ message: "Missing required fields in preAuditData." });
+    }
+
+    await PreAuditModel.updateOne(
+      {
+        user: user._id,
+        caseNumber,
+        ActivityID: ActivityID,
+      },
+      {
+        $set: {
+          StartTime: StartTime,
+          EndTime: EndTime,
         },
-        {
-          $set: {
-            StartTime: StartTime,
-            EndTime: EndTime,
-          },
-        }
-      );
+      }
+    );
     return res
       .status(200)
       .json({ message: "Pre-audit data updated successfully." });
