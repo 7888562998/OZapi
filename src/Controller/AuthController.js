@@ -902,17 +902,19 @@ const createUserIndustry = async (req, res, next) => {
 const getUserIndustry = async (req, res) => {
   try {
     const userId = req.user._id;
-    const Industries = await UserIndustryModel.find({ user: userId });
+    const query = `SELECT * FROM userindustries WHERE userid = $1`;
+    const result = await pool.query(query, [userId])
+
     res.status(200).json({
       success: true,
-      message: "Industries fetched successfully",
-      data: Industries,
+      message: "Userindustries fetched successfully",
+      data: result.rows,
     });
   } catch (error) {
     // Handle any errors
     res.status(500).json({
       success: false,
-      message: "Failed to fetch company manager",
+      message: "Failed to fetch Userindustries",
       error: error.message,
     });
   }
