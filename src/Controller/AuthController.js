@@ -640,7 +640,6 @@ const LoginUser = async (req, res, next) => {
   }
 };
 
-
 // const SignUp = async (req, res) => {
 //   try {
 //     const { email, password, name, userType, companyId } = req.body;
@@ -677,7 +676,6 @@ const LoginUser = async (req, res, next) => {
 //   }
 // };
 
-
 const SignUp = async (req, res, next) => {
   try {
     const { email, password, name, userType, companyId } = req.body;
@@ -686,7 +684,9 @@ const SignUp = async (req, res, next) => {
     const checkUserResult = await pool.query(checkUserQuery, [email]);
 
     if (checkUserResult.rows.length > 0) {
-      return next(CustomError.badRequest("User with this email already exists."));
+      return next(
+        CustomError.badRequest("User with this email already exists.")
+      );
     }
 
     const hashedPassword = hashPassword(password);
@@ -696,7 +696,15 @@ const SignUp = async (req, res, next) => {
     VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *;
   `;
 
-    const values = [email, hashedPassword, name, userType, false, false, companyId];
+    const values = [
+      email,
+      hashedPassword,
+      name,
+      userType,
+      false,
+      false,
+      companyId,
+    ];
     const insertResult = await pool.query(insertUserQuery, values);
 
     const newUser = insertResult.rows[0];
@@ -836,11 +844,9 @@ const updateProfile = async (req, res, next) => {
   }
 };
 
-
 const createUserIndustry = async (req, res, next) => {
   try {
     const { email, industryId } = req.body;
-    console.log(" email, industryId ", email, industryId);
 
     if (!email || !industryId) {
       return res
@@ -848,36 +854,45 @@ const createUserIndustry = async (req, res, next) => {
         .json({ message: "Email and industryId are required." });
     }
 
-    const existingUser = await authModel.findOne({ email });
-    const industryData = await IndustryModel.findOne({
-      _id: new mongoose.Types.ObjectId(industryId),
-    });
+    const userQuery = `SELECT * FROM auths WHERE email = $1`;
+    var existingUser = await pool.query(userQuery, [email]);
+    existingUser = existingUser.rows[0];
 
-    const existingIndustry = await UserIndustryModel.findOne({
-      user: new mongoose.Types.ObjectId(existingUser._id),
-      industryId: new mongoose.Types.ObjectId(industryId),
-    });
+    const industryDataQuery = `SELECT * FROM industries WHERE _id = $1`;
+    var industryData = await pool.query(industryDataQuery, [industryId]);
+    industryData = industryData.rows[0];
+
+    console.log(existingUser._id, industryId);
+    const IndustryQuery = `SELECT * FROM userindustries WHERE userid = $1 and "industryId" = $2`;
+    var existingIndustry = await pool.query(IndustryQuery, [
+      existingUser._id,
+      industryId,
+    ]);
+    existingIndustry = existingIndustry.rows;
+    console.log(existingIndustry, "existingIndustry");
 
     if (!existingUser) {
       return res.status(404).json({ message: "User not found." });
     }
 
-    if (existingIndustry) {
+    if (existingIndustry.length > 0) {
       return res.status(409).json({ message: "Industry is already exist." });
     }
 
-    const newUser = new UserIndustryModel({
-      user: existingUser._id,
-      title: industryData.title,
-      industryId: new mongoose.Types.ObjectId(industryId),
-    });
+    const insertUserIndustriesQuery = `INSERT INTO userindustries (userid, "title", "industryId") VALUES ($1, $2, $3) RETURNING *;`;
 
-    await newUser.save();
+    // Execute the query with the provided values
+    const insertUserIndustries = await pool.query(insertUserIndustriesQuery, [
+      existingUser._id, // Maps to `user` in the original MongoDB model
+      industryData.title,
+      industryId, // Ensure this matches the format expected in the database (e.g., UUID or integer)
+    ]);
+    console.log("insertUserIndustries", insertUserIndustries.rows[0]);
 
     return res.status(201).json({
       message: "Industry created successfully",
-      user: { email: newUser.email, name: newUser.name },
-      data: existingIndustry,
+      user: { email: existingUser.email, name: existingUser.name },
+      data: insertUserIndustries.rows[0],
     });
   } catch (error) {
     next(CustomError.createError(error.message, 500));
@@ -906,10 +921,10 @@ const getUserIndustry = async (req, res) => {
 const getComapnyManager = async (req, res) => {
   try {
     const { companyId } = req.params;
-  
+
     const authsQuery = `SELECT _id,name FROM auths WHERE "companyId" = $1 and role= $2`;
-    
-    var users = await pool.query(authsQuery, [companyId,"manager"]);
+
+    var users = await pool.query(authsQuery, [companyId, "manager"]);
     users = users.rows;
     res.status(200).json({
       success: true,
