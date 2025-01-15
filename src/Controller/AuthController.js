@@ -797,19 +797,25 @@ const getProfile = async (req, res, next) => {
 const updateProfile = async (req, res, next) => {
   try {
     const { email, role } = req.body;
-    console.log(" email, role ", email, role);
+    console.log("--email--, --role--", email, role);
 
     if (!email || !role) {
       return res.status(400).json({ message: "Email and role are required." });
     }
 
-    const existingUser = await authModel.findOne({ email });
-    console.log("existingUser", existingUser);
-    if (!existingUser) {
+    // Check if user exists
+    const existingUserQuery = "SELECT * FROM auths WHERE email = $1";
+    const existingUserResult = await pool.query(existingUserQuery, [email]);
+
+    if (existingUserResult.rows.length === 0) {
       return res.status(404).json({ message: "User not found." });
     }
 
-    await authModel.updateOne({ email }, { $set: { role } });
+    const existingUser = existingUserResult.rows[0];
+    console.log("existingUser", existingUser);
+
+    const updateRoleQuery = "UPDATE auths SET role = $1 WHERE email = $2";
+    await pool.query(updateRoleQuery, [role, email]);
 
     return next(
       CustomSuccess.createSuccess(
@@ -818,7 +824,7 @@ const updateProfile = async (req, res, next) => {
           user: {
             email: existingUser.email,
             name: existingUser.name,
-            role: existingUser.role,
+            role: role,
           },
         },
         "Profile updated successfully",
@@ -829,6 +835,7 @@ const updateProfile = async (req, res, next) => {
     next(CustomError.createError(error.message, 500));
   }
 };
+
 
 const createUserIndustry = async (req, res, next) => {
   try {
