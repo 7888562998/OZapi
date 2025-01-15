@@ -192,14 +192,13 @@ const createActivity = async (req, res) => {
 const getActivitybyRoles = async (req, res) => {
   try {
     const { IndustryID, RoleID } = req.body;
-
-    const getActivity = await ActivityModel.find({ RoleID, IndustryID }).sort({
-      title: 1,
-    });
+    const query = `SELECT * FROM activities WHERE "RoleID" = $1 and "IndustryID"  = $2 ORDER BY title ASC`;
+    const result = await pool.query(query, [RoleID, IndustryID])
+    const getActivity = result.rows;
 
     const formattedGetActivity = getActivity.map((industry) => {
       return {
-        ...industry._doc,
+        ...industry,
         title: industry.title
           .split(" ")
           .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
