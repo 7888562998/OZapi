@@ -394,12 +394,12 @@ const getAllRoles = async (req, res) => {
 const getRolesbyID = async (req, res) => {
   try {
     const { IndustryID } = req.body;
-    const Roles = await RoleModel.find({ IndustryID })
-      .populate("IndustryID")
-      .sort({ title: 1 });
+    const query = `SELECT * FROM roles WHERE "IndustryID" = $1 ORDER BY title ASC`;
+    const result = await pool.query(query, [IndustryID]);
+    const Roles = result.rows;
     const formattedRoles = Roles.map((role) => {
       return {
-        ...role._doc,
+        ...role,
         title: role.title
           .split(" ")
           .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
