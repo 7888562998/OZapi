@@ -212,19 +212,16 @@ const UpdateStartStudy = async (req, res, next) => {
         .json({ message: "Missing required fields in preAuditData." });
     }
 
-    await PreAuditModel.updateOne(
-      {
-        user: user._id,
-        caseNumber,
-        ActivityID: ActivityID,
-      },
-      {
-        $set: {
-          StartTime: StartTime,
-          EndTime: EndTime,
-        },
-      }
-    );
+    const updateQuery = `UPDATE preaudits SET "StartTime" = $1, "EndTime" = $2 
+    WHERE "user" = $3  and "caseNumber" = $4 and "ActivityID" = $5 RETURNING *;`;
+
+    await pool.query(updateQuery, [
+      StartTime,
+      EndTime,
+      user._id,
+      caseNumber,
+      ActivityID,
+    ]);
     return res
       .status(200)
       .json({ message: "Pre-audit data updated successfully." });
@@ -264,8 +261,8 @@ const getStartStudyByCaseNumber = async (req, res, next) => {
     const query = `SELECT pa.*, a.title AS "activityTitle" FROM preaudits pa 
     LEFT JOIN activities a ON pa."ActivityID" = a._id 
     WHERE pa."caseNumber" = $1;`;
-  var preAuditList = await pool.query(query, [Number(caseNumber)]);
-  preAuditList=preAuditList.rows;
+    var preAuditList = await pool.query(query, [Number(caseNumber)]);
+    preAuditList = preAuditList.rows;
     return next(
       CustomSuccess.createSuccess(
         {
