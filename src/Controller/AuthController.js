@@ -417,159 +417,89 @@ const updateUser = async (req, res, next) => {
     if (error) {
       return next(CustomError.badRequest(error.details[0].message));
     }
-
     const { user } = req;
-
-    console.log("user UPDATED =>", user);
 
     if (!user) {
       return next(CustomError.badRequest("User Not Found"));
     }
 
     if (req.files["file"]) {
-      // Process 'file' upload if it exists in the request
       const file = req.files["file"][0];
 
-      if (
-        user.image &&
-        user.image.file != null &&
-        user.image.file != undefined
-      ) {
-        fs.unlink("Uploads/" + user.image.file, (err) => {
-          if (err) {
-            console.error("Error deleting file:", err);
-          }
-        });
-        await fileUploadModel.deleteOne(user.image?._id);
+      if (user.image) {
+        fs.unlinkSync(`Uploads/${user.image.file}`);
+        await pool.query(
+          "DELETE FROM file_uploads WHERE _id = $1",
+          [user.image.id]
+        );
       }
-      const FileUploadModel = await fileUploadModel.create({
-        file: file.filename,
-        fileType: file.mimetype,
-        user: user._id,
-      });
-      data.image = FileUploadModel._id;
+
+      const fileUploadResult = await pool.query(`INSERT INTO file_uploads (file, file_type, user_id) VALUES ($1, $2, $3) RETURNING id`,
+        [file.filename, file.mimetype, user.id]
+      );
+
+      data.imageId = fileUploadResult.rows[0].id;
     }
 
+    // Handle file upload for 'coverImageFile'
     if (req.files["coverImageFile"]) {
-      // Process 'coverImageFile' upload if it exists in the request
       const coverImageFile = req.files["coverImageFile"][0];
 
-      if (
-        user.coverImage &&
-        user.coverImage.file != null &&
-        user.coverImage.file != undefined
-      ) {
-        fs.unlink("Uploads/" + user.coverImage.file, (err) => {
-          if (err) {
-            console.error("Error deleting file:", err);
-          }
-        });
-        await fileUploadModel.deleteOne(user.coverImage?._id);
+      if (user.coverImage) {
+        // Delete old cover image file if exists
+        fs.unlinkSync(`Uploads/${user.coverImage.file}`);
+        await pool.query("DELETE FROM file_uploads WHERE _id = $1", [user.coverImage.id]);
       }
-      const CoverImageModel = await fileUploadModel.create({
-        file: coverImageFile.filename,
-        fileType: coverImageFile.mimetype,
-        user: user._id,
-      });
-      data.coverImage = CoverImageModel._id;
+
+      const coverImageResult = await pool.query(`INSERT INTO file_uploads (file, file_type, user_id) VALUES ($1, $2, $3) RETURNING id`,
+        [coverImageFile.filename, coverImageFile.mimetype, user.id]
+      );
+      data.coverImageId = coverImageResult.rows[0].id;
     }
 
+    // Hash password if it's being updated
     if (data.password) {
       data.password = hashPassword(data.password);
     }
 
-    const updateUser = await authModel.findByIdAndUpdate(
-      user._id,
-      { isCompleted: true, ...data },
-      {
-        new: true,
-      }
-    );
+    const updateQuery = `UPDATE auths SET "isCompleted" = true,
+    ${Object.keys(data).map((key, index) => `"${key}" = $${index + 1}`).join(", ")}
+      WHERE _id = $${Object.keys(data).length + 1}
+      RETURNING *;
+    `;
+    const updateParams = [...Object.values(data), user._id];
+    const updatedUserResult = await pool.query(updateQuery, updateParams);
 
+    if (updatedUserResult.rowCount === 0) {
+      return next(CustomError.badRequest("User Not Found"));
+    }
+
+    const updatedUser = updatedUserResult.rows[0];
     const token = await tokenGen(
-      { id: updateUser._id, userType: updateUser.userType },
+      { _id: updatedUser._id, userType: updatedUser.userType },  // User-specific info
       "auth",
-      deviceToken
+      deviceToken  // Device token
     );
-
-    const userdata = (
-      await authModel.aggregate([
-        {
-          ///$match: { email: email, status: "accepted" },
-          $match: { _id: user._id },
-        },
-        {
-          $lookup: {
-            from: "fileuploads",
-            localField: "image",
-            foreignField: "_id",
-            as: "image",
-          },
-        },
-        {
-          $unwind: {
-            path: "$image",
-            preserveNullAndEmptyArrays: true,
-          },
-        },
-        {
-          $lookup: {
-            from: "fileuploads",
-            localField: "coverImage",
-            foreignField: "_id",
-            as: "coverImage",
-          },
-        },
-        {
-          $unwind: {
-            path: "$coverImage",
-            preserveNullAndEmptyArrays: true,
-          },
-        },
-        {
-          $project: {
-            devices: 0,
-            loggedOutDevices: 0,
-            otp: 0,
-            updatedAt: 0,
-            createdAt: 0,
-            __v: 0,
-            isDeleted: 0,
-            "image.updatedAt": 0,
-            "image.createdAt": 0,
-            "image.__v": 0,
-            "image.user": 0,
-            "image.fileType": 0,
-            "image._id": 0,
-            "coverImage._id": 0,
-            "coverImage.updatedAt": 0,
-            "coverImage.createdAt": 0,
-            "coverImage.__v": 0,
-            "coverImage.user": 0,
-            "coverImage.fileType": 0,
-          },
-        },
-        { $limit: 1 },
-      ])
-    )[0];
 
     return next(
       CustomSuccess.createSuccess(
-        { ...userdata, token },
+        { ...updatedUser, token },
         "Profile updated successfully",
         200
       )
     );
   } catch (error) {
+    console.error(error);
     next(CustomError.createError(error.message, 500));
   }
 };
+
 
 const updateUserMultipleImages = async (req, res, next) => {
   try {
     const { user } = req;
     const images = req.files["file"];
-       
+
     if (!images || images.length === 0) {
       return res.status(400).json({ message: "No files uploaded" });
     }
