@@ -44,8 +44,22 @@ const CreateNonValueAdded = async (req, res, next) => {
       ActivityID,
       PreAuditId,
     } = req.body;
-    console.log(req.body);
-    const newActivity = new NonValueActivtyModel({
+
+    const query = `
+      INSERT INTO nonvalueactivties (
+        title, 
+        "StartTime", 
+        "EndTime", 
+        "caseNumber", 
+        description, 
+        "ActivityID", 
+        "PreAuditId"
+      )
+      VALUES ($1, $2, $3, $4, $5, $6, $7)
+      RETURNING *;
+    `;
+
+    const values = [
       title,
       StartTime,
       EndTime,
@@ -53,18 +67,20 @@ const CreateNonValueAdded = async (req, res, next) => {
       description,
       ActivityID,
       PreAuditId,
-    });
+    ];
+    const result = await pool.query(query, values);
 
-    const savedActivity = await newActivity.save();
     return res.status(200).json({
       status: 1,
       message: "Non-Value activity added successfully",
-      data: savedActivity,
+      data: result.rows[0],
     });
   } catch (error) {
+    console.error("Error inserting data:", error.message);
     res.status(500).json({ error: error.message });
   }
 };
+
 const getNonActivites = async (req, res, next) => {
   try {
     const { PreAuditId } = req.params;

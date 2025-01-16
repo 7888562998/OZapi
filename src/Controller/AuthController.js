@@ -12,6 +12,7 @@ import { mongoose } from "mongoose";
 import { accessTokenValidator } from "../Utils/Validator/accessTokenValidator.js";
 import NotificationController from "./NotificationController.js";
 import jwt from "jsonwebtoken";
+import format from 'pg-format';
 
 import {
   LoginUserValidator,
@@ -568,26 +569,29 @@ const updateUserMultipleImages = async (req, res, next) => {
   try {
     const { user } = req;
     const images = req.files["file"];
-    if (req.files["file"].length == 0) {
+       
+    if (!images || images.length === 0) {
       return res.status(400).json({ message: "No files uploaded" });
     }
 
-    const filesData = images.map((file) => ({
-      filePath: file.path,
-      fileType: file.mimetype,
-    }));
+    const query = `
+      INSERT INTO imageuploads ("user", "filePath", "fileType")
+      VALUES %L
+      RETURNING "user", "filePath", "fileType";
+    `;
 
-    const allFiles = [...filesData];
+    const values = images.map((file) => [
+      user._id,
+      file.path,
+      file.mimetype,
+    ]);
 
-    const fileUploadEntry = await imagesUploadModel.create({
-      files: allFiles,
-      user: user._id,
-    });
+    const formattedQuery = format(query, values);
+    const result = await pool.query(formattedQuery);
 
-    console.log("fileUploadEntry", fileUploadEntry);
     return next(
       CustomSuccess.createSuccess(
-        { data: fileUploadEntry },
+        { data: result.rows },
         "Images uploaded successfully",
         200
       )
@@ -640,41 +644,6 @@ const LoginUser = async (req, res, next) => {
   }
 };
 
-// const SignUp = async (req, res) => {
-//   try {
-//     const { email, password, name, userType, companyId } = req.body;
-
-//     const existingUser = await authModel.findOne({ email });
-//     if (existingUser) {
-//       return res
-//         .status(400)
-//         .json({ message: "User with this email already exists." });
-//     }
-
-//     const hashedPassword = hashPassword(password);
-//     const newUser = new authModel({
-//       email,
-//       password: hashedPassword,
-//       name,
-//       userType,
-//       isVerified: false,
-//       isCompleted: false,
-//       companyId,
-//     });
-
-//     await newUser.save();
-
-//     return res.status(201).json({
-//       message: "User registered successfully",
-//       user: { email: newUser.email, name: newUser.name },
-//     });
-//   } catch (error) {
-//     console.error(error);
-//     if (!res.headersSent) {
-//       return res.status(500).json({ message: "Error registering user" });
-//     }
-//   }
-// };
 
 const SignUp = async (req, res, next) => {
   try {
