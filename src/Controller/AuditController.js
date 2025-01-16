@@ -494,17 +494,17 @@ const getActivityforCase = async (req, res, next) => {
 
 const getAudit = async (req, res, next) => {
   try {
-    const { user } = req;
     const { activityId, caseNo } = req.body;
-    console.log("NEW", user._id);
-    const Audit = await AuditModel.find({
-      ActivityID: activityId,
-      caseNumber: caseNo,
-    });
+    const query = `
+    SELECT * FROM audits
+    WHERE "ActivityID" = $1 AND "caseNumber" = $2
+  `;
+    const values = [activityId, caseNo];
+    const { rows } = await pool.query(query, values);
 
     return next(
       CustomSuccess.createSuccess(
-        Audit,
+        rows,
         "Audit Information retrieved successfully",
         200
       )
