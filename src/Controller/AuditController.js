@@ -183,8 +183,11 @@ const CreateStartStudy = async (req, res, next) => {
 
     const updateQuery = `UPDATE auths SET "currentCase" = $1 WHERE _id = $2 RETURNING *;`;
 
-    const updatedcase=await pool.query(updateQuery, [newCaseNumber, user._id]);
-    console.log(updatedcase,"updatedcase");
+    const updatedcase = await pool.query(updateQuery, [
+      newCaseNumber,
+      user._id,
+    ]);
+    console.log(updatedcase, "updatedcase");
     return res.status(200).json({
       status: 1,
       message: "Pre-Audit(s) created successfully",
@@ -258,36 +261,11 @@ const getStartStudy = async (req, res, next) => {
 const getStartStudyByCaseNumber = async (req, res, next) => {
   try {
     const { caseNumber } = req.params;
-    const preAuditList = await PreAuditModel.aggregate([
-      {
-        $match: { caseNumber: Number(caseNumber) },
-      },
-      {
-        $lookup: {
-          from: "activities",
-          localField: "ActivityID",
-          foreignField: "_id",
-          as: "activityDetails",
-        },
-      },
-      {
-        $unwind: {
-          path: "$activityDetails",
-          preserveNullAndEmptyArrays: true,
-        },
-      },
-      {
-        $addFields: {
-          activityTitle: "$activityDetails.title",
-        },
-      },
-      {
-        $project: {
-          activityDetails: 0,
-        },
-      },
-    ]);
-
+    const query = `SELECT pa.*, a.title AS "activityTitle" FROM preaudits pa 
+    LEFT JOIN activities a ON pa."ActivityID" = a._id 
+    WHERE pa."caseNumber" = $1;`;
+  var preAuditList = await pool.query(query, [Number(caseNumber)]);
+  preAuditList=preAuditList.rows;
     return next(
       CustomSuccess.createSuccess(
         {
