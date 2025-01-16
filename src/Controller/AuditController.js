@@ -84,18 +84,20 @@ const CreateNonValueAdded = async (req, res, next) => {
 const getNonActivites = async (req, res, next) => {
   try {
     const { PreAuditId } = req.params;
-    console.log("PreAuditId", PreAuditId);
-    const { ObjectId } = mongoose.Types;
-    const preAuditList = await NonValueActivtyModel.findOne({
-      PreAuditId: new ObjectId(PreAuditId),
-    });
+
+    const query = 'SELECT * FROM nonvalueactivties WHERE "PreAuditId" = $1';
+    const { rows } = await pool.query(query, [PreAuditId]);
+
+    if (rows.length === 0) {
+      return next(
+        CustomError.createError('No pre-audit information found', 404)
+      );
+    }
 
     return next(
       CustomSuccess.createSuccess(
-        {
-          preAuditList,
-        },
-        "Preaudit Information retrieved successfully",
+        { preAuditList: rows },
+        'Preaudit Information retrieved successfully',
         200
       )
     );
