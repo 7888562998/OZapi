@@ -574,29 +574,29 @@ const CreateAudit = async (req, res, next) => {
     //   }
     // }
 
-    // let Documents = [];
-    // let Recording = [];
-    // if (req.files["Documents"]) {
-    //   // Process 'file' upload if it exists in the request
-    //   const file = req.files["Documents"];
-    //   for (const el of file) {
-    //     console.log("--el--", el);
+    let Documents = [];
+    let Recording = [];
+    if (req.files["Documents"]) {
+      // Process 'file' upload if it exists in the request
+      const file = req.files["Documents"];
+      for (const el of file) {
+        console.log("--el--", el);
 
-    //     const query = `
-    //   INSERT INTO fileuploads (file, fileType, user)
-    //   VALUES ($1, $2, $3)
-    //   RETURNING _id;
-    // `;
-    //     const values = [el.filename, el.mimetype, user._id];
+        const query = `
+      INSERT INTO fileUploads (file, "fileType", "user")
+      VALUES ($1, $2, $3)
+      RETURNING _id;
+    `;
+        const values = [el.filename, el.mimetype, user._id];
 
-    //     try {
-    //       const result = await pool.query(query, values);
-    //       Documents.push(result.rows[0].id);
-    //     } catch (error) {
-    //       console.error("Error inserting file upload:", error);
-    //     }
-    //   }
-    // }
+        try {
+          const result = await pool.query(query, values);
+          Documents.push(result.rows[0]._id);
+        } catch (error) {
+          console.error("Error inserting file upload:", error);
+        }
+      }
+    }
 
     // if (req.files["Recording"]) {
     //   const RecordingFile = req.files["Recording"];
@@ -654,15 +654,11 @@ const CreateAudit = async (req, res, next) => {
     //   }
     // );
 
-    console.log("2222222222222222",
-      "start", StartTime, "end",
-      EndTime,
-    )
 
-    console.log(user._id, "user._id");
+
     const result = await pool.query(
-      `INSERT INTO audits (userid, "ActivityID", description, "caseNumber", "StartTime", "EndTime", "PreauditID")
-       VALUES ($1, $2, $3, $4, $5, $6, $7)
+      `INSERT INTO audits (userid, "ActivityID", description, "caseNumber", "StartTime", "EndTime", "PreauditID","Documents")
+       VALUES ($1, $2, $3, $4, $5, $6, $7,$8)
        RETURNING *`,
       [
         user._id,
@@ -671,7 +667,8 @@ const CreateAudit = async (req, res, next) => {
         caseNumber,
         StartTime,
         EndTime,
-        PreAuditId
+        PreAuditId,
+        Documents
       ]
     );
 
