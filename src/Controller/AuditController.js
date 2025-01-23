@@ -294,8 +294,6 @@ const getStartStudyByCaseNumber = async (req, res, next) => {
 
 
 const CreateAudit = async (req, res, next) => {
-  console.log("Documents2222222",req.files["Documents"])
-  console.log(req.body, "create-audit");
   try {
     const { user } = req;
     const {
