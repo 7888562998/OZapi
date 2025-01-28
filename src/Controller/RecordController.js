@@ -107,16 +107,15 @@ function calculatePercentage({ preAuditRecords, auditRecords }) {
         const overlapDuration = Math.max(0, overlapEnd - overlapStart);
         const overlapPercentage1 = (overlapDuration / duration1) * 100;
 
-        console.log(overlapPercentage1, "Overlap percentage")
         results.push({
           activity_id: jl.ActivityID.toString(),
           percentage: overlapPercentage1,
           audit_desc: [jl.description],
           pre_audit_desc: [el.description],
-          estimatedPer: el.EstimatedPer,
+          estimatedPer: el.totalPercentage,
           preAuditStartTime: preAuditStartTime,
           preAuditEndTime,
-          activity_title: el.ActivityID.title
+          activity_title: el.activityid.ActivityID.title
 
         })
 
@@ -437,14 +436,94 @@ const MatchPreAuditAndAudit = async (req, res) => {
         message: "Missing caseNumber in the request body.",
       });
     }
-    const auditRecords = await AuditModel.find({ caseNumber }).populate(["Recording", "Documents"])
+    
+   const auditRecordsQuery = `SELECT 
+    audits.*,
+    jsonb_build_object(
+        'ActivityID', jsonb_build_object(
+            'id', activities._id,
+            'title', activities.title   
+        )
+    )AS ActivityID,
+	 jsonb_build_object(
+		 'documents', jsonb_agg(
+            jsonb_build_object(
+				'_id',fileuploads._id,
+                'fileType', fileuploads."fileType",
+				'file',fileuploads."file"
+            )
+			 )
+	 ) AS documents
+	 ,
+	  jsonb_build_object(
+		 'recording', jsonb_agg(
+            jsonb_build_object(
+				'_id',fileuploads1._id,
+                'fileType', fileuploads1."fileType",
+				'file',fileuploads1."file"
+            )
+			 )
+	 ) AS recording
+	
+FROM 
+    audits
+JOIN 
+    activities ON audits."ActivityID"::uuid = activities."_id"
+LEFT JOIN 
+    LATERAL unnest(audits."Documents"::text[]) AS doc_id ON true
+	LEFT JOIN 
+    LATERAL unnest(audits."Recording"::text[]) AS doc_id1 ON true
+LEFT JOIN 
+    fileuploads ON fileuploads._id::uuid = doc_id::uuid	
+	LEFT JOIN 
+    fileuploads AS fileuploads1 ON fileuploads1._id::uuid = doc_id1::uuid
+WHERE 
+    audits."caseNumber" = $1
+GROUP BY 
+    audits._id, activities._id;	`;
 
-    const nonValueActivityRecords = await NonValueActivtyModel.find({ caseNumber });
+const auditRecordsRes = await pool.query(auditRecordsQuery, [caseNumber]);
+const auditRecords = auditRecordsRes.rows;
+    
+    console.log(auditRecords,"auditRecords------",auditRecords[0].documents,auditRecords[0].recording);
+    //const nonValueActivityRecords = await NonValueActivtyModel.find({ caseNumber });
+
+
+   
+    const nonValueActivityQuery = `SELECT * FROM nonvalueactivties WHERE "caseNumber" = $1;`;
+    const nonValueActivityRes = await pool.query(nonValueActivityQuery, [
+      caseNumber,
+    ]);
+    const nonValueActivityRecords = nonValueActivityRes.rows;
     console.log(nonValueActivityRecords, "NON VALUE ACT")
 
-    const PreAudit = await PreAuditModel.find({ caseNumber }).populate("ActivityID");
+    //const PreAudit = await PreAuditModel.find({ caseNumber }).populate("ActivityID");
+    
 
-    let matchingTimesAndActivityIDs = calculatePercentage({ auditRecords, preAuditRecords: PreAudit });
+
+    const preAuditQuery = `SELECT 
+    preaudits.*,
+    jsonb_build_object(
+        'ActivityID', jsonb_build_object(
+            'id', activities._id,
+            'title', activities.title
+        )
+    ) AS ActivityID
+  FROM 
+    preaudits
+  JOIN 
+    activities ON preaudits."ActivityID" = activities."_id"
+  WHERE 
+    preaudits."caseNumber" = $1;`;
+
+    const preAuditRes = await pool.query(preAuditQuery, [caseNumber]);
+    const PreAudit = preAuditRes.rows;
+
+
+
+
+    let matchingTimesAndActivityIDs = calculatePercentage({ auditRecords, preAuditRecords:PreAudit });
+   
     let titleCounts = calculateNoValueActivity({ records: matchingTimesAndActivityIDs, nonValueActivities: nonValueActivityRecords });
 
     console.log(PreAudit, "Preaudit records")
@@ -455,8 +534,7 @@ const MatchPreAuditAndAudit = async (req, res) => {
     console.log(totalShiftPercentage, "Total minutes")
 
     let recordings = auditRecords.map((el) => {
-
-      return el?.Recording ? el?.Recording.map((jl) => {
+      return el?.recording ? el?.recording.recording.map((jl) => {
         return {
           url: process.env.BASE_URL + jl?.file,
           fileType: jl?.fileType
@@ -464,9 +542,10 @@ const MatchPreAuditAndAudit = async (req, res) => {
       }) : []
 
     })
+    
     let documents = auditRecords.map((el) => {
 
-      return el?.Documents ? el?.Documents.map((jl) => {
+      return el?.documents ? el?.documents.documents.map((jl) => {
         return {
           url: process.env.BASE_URL + jl?.file,
           fileType: jl?.fileType
@@ -474,14 +553,13 @@ const MatchPreAuditAndAudit = async (req, res) => {
       }) : []
 
     })
-    let estimatedPer = PreAudit.map((el) => {
 
+    let estimatedPer = PreAudit.map((el) => {
       return {
         preAuditId: el._id.toString(),
-        activityId: el?.ActivityID?._id.toString(),
-        activityTitle: el?.ActivityID?.title,
-        estimatedPer: el?.EstimatedPer,
-
+        activityId: el?.activityid?.ActivityID?.id,
+        activityTitle: el?.activityid?.ActivityID?.title,
+        estimatedPer: el?.totalPercentage,
       }
 
     })
