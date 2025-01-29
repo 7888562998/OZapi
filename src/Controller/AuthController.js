@@ -356,46 +356,41 @@ const generateSignUpOtp = async ({ email, password, name }) => {
 const verifyProfile = async (req, res, next) => {
   try {
     const { email, otp } = req.body;
-
-    // Check if the email already exists
-
-    const userData = await authModel.findOne({ email: email });
+    const userResult = await db.query('SELECT * FROM auths WHERE "email" = $1', [email]);
+    const userData = userResult.rows[0];
     if (!userData) {
       return next(
-        CustomError.badRequest("You are not registered please contact Admin")
+        CustomError.badRequest("You are not registered, please contact Admin")
       );
     }
-    const findOTP = await OtpModel.findOne({
-      auth: userData._id,
-      reason: "login",
-      otpUsed: false,
-    });
+
+    const otpResult = await db.query(
+      'SELECT * FROM Otps WHERE "auth" = $1 AND "otpUsed" = false AND "reason" = $2 LIMIT 1',
+      [userData._id, 'login']
+    );
+    const findOTP = otpResult.rows[0];
+
     if (!findOTP) {
       return next(CustomError.badRequest("Invalid OTP"));
     }
-    console.log(findOTP, "FIND OTP");
-    console.log(otp, findOTP.otpKey, "HASH");
-    const decryptOTP = comparePassword(otp.toString(), findOTP.otpKey);
-    console.log(decryptOTP, "DESCRYPT");
+
+    const decryptOTP = await bcrypt.compare(otp.toString(), findOTP.otpKey);
 
     if (!decryptOTP) {
       return next(CustomError.badRequest("Invalid OTP"));
     }
 
-    const updateUser = await authModel.findByIdAndUpdate(
-      userData._id,
-      { isVerified: true },
-      {
-        new: true,
-      }
+    const updateUserResult = await db.query(
+      'UPDATE auths SET "isVerified" = true WHERE _id = $1 RETURNING *',
+      [userData._id]
     );
-
-    const updateOTP = await OtpModel.deleteOne({ _id: findOTP._id });
+    const updateUser = updateUserResult.rows[0];
+    await db.query('DELETE FROM Otps WHERE _id = $1', [findOTP._id]);
 
     return next(
       CustomSuccess.createSuccess(
         { updateUser },
-        "User Verified Succesfully",
+        "User Verified Successfully",
         200
       )
     );
@@ -403,6 +398,8 @@ const verifyProfile = async (req, res, next) => {
     return next(CustomError.createError(error.message, 500));
   }
 };
+
+
 
 const updateUser = async (req, res, next) => {
   try {
