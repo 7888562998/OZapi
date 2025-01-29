@@ -620,19 +620,18 @@ const SignUp = async (req, res, next) => {
 
 const getCompanies = async (req, res, next) => {
   try {
-    const companies = await CompanyModel.find().sort({ companyName: 1 });
+    const companiesQuery = 'SELECT * FROM companies ORDER BY "companyName" ASC';
+    const companies = await pool.query(companiesQuery);
 
-    console.log("company", companies);
-    const formattedCompanies = companies.map((companies) => {
+    const formattedCompanies = companies.rows.map((companies) => {
       return {
-        ...companies._doc,
+        ...companies,
         companyName: companies.companyName
           .split(" ")
           .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
           .join(" "),
       };
     });
-
     return res.status(200).json({
       status: 1,
       message: "Companies retrieved successfully",
