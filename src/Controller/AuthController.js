@@ -849,37 +849,63 @@ const forgetPassword = async (req, res, next) => {
     }
     const { email } = req.body;
 
-    const dataExist = await authModel.findOne({
-      email: email,
-      isDeleted: false,
-    });
+    // const dataExist = await authModel.findOne({
+    //   email: email,
+    //   isDeleted: false,
+    // });
+    // if (!dataExist) {
+    //   return next(CustomError.badRequest("User Not Found"));
+    // }
 
+    var dataExist = await pool.query('SELECT * FROM auths WHERE email = $1 AND "isDeleted" = false', [email]);
+    dataExist= dataExist.rows[0];
     if (!dataExist) {
       return next(CustomError.badRequest("User Not Found"));
     }
+
+    // let otp = Math.floor(Math.random() * 90000) + 100000;
+    // let otpExist = await OtpModel.findOne({ auth: dataExist._id });
+    // if (otpExist) {
+    //   await OtpModel.findOneAndUpdate(
+    //     { auth: dataExist._id },
+    //     {
+    //       otpKey: await bcrypt.hash(otp.toString(), genSalt),
+    //       reason: "forgetPassword",
+    //       otpUsed: false,
+    //       expireAt: new Date(new Date().getTime() + 60 * 60 * 1000),
+    //     }
+    //   );
+    // } else {
+    //   otpExist = await OtpModel.create({
+    //     auth: dataExist._id,
+    //     otpKey: otp,
+    //     reason: "forgetPassword",
+    //     expireAt: new Date(new Date().getTime() + 60 * 60 * 1000),
+    //   });
+    //   await otpExist.save();
+    // }
+
     let otp = Math.floor(Math.random() * 90000) + 100000;
-    let otpExist = await OtpModel.findOne({ auth: dataExist._id });
-    if (otpExist) {
-      await OtpModel.findOneAndUpdate(
-        { auth: dataExist._id },
-        {
-          otpKey: await bcrypt.hash(otp.toString(), genSalt),
-          reason: "forgetPassword",
-          otpUsed: false,
-          expireAt: new Date(new Date().getTime() + 60 * 60 * 1000),
-        }
+
+    // Check if OTP already exists for the user
+    const otpExist = await pool.query('SELECT * FROM otps WHERE auth = $1', [dataExist.id]);
+    
+    if (otpExist.rows.length > 0) {
+      await pool.query(
+        'UPDATE otps SET "otpKey" = $1, "reason" = $2, "otpUsed" = false, "expireAt" = NOW() + INTERVAL \'1 hour\',"auth"=$4 WHERE _id = $3,',
+        [await bcrypt.hash(otp.toString(), genSalt), 'forgetPassword', otpExist.rows[0].id,dataExist.id]
       );
     } else {
-      otpExist = await OtpModel.create({
-        auth: dataExist._id,
-        otpKey: otp,
-        reason: "forgetPassword",
-        expireAt: new Date(new Date().getTime() + 60 * 60 * 1000),
-      });
-      await otpExist.save();
+      const result = await pool.query(
+        'INSERT INTO otps ("otpKey", auth, "reason", "expireAt") VALUES ($1, $2, $3, NOW() + INTERVAL \'1 hour\') RETURNING _id',
+        [otp,dataExist.id, 'forgetPassword']
+      );
     }
 
-    await authModel.findOneAndUpdate({ email }, { otp: otpExist._id });
+   // await authModel.findOneAndUpdate({ email }, { otp: otpExist._id });
+
+   await pool.query('UPDATE auths SET "otp" = $1 WHERE email = $2', [otpExist._id, email]);
+
     const emailData = {
       subject: "Aldebaran - Account Verification",
       html: `
@@ -938,12 +964,19 @@ const forgetPassword = async (req, res, next) => {
         // },
       ],
     };
-    await sendEmails(
+
+     sendEmails(
       email,
       emailData.subject,
       emailData.html,
       emailData.attachments
     );
+
+    // const token = await tokenGen(
+    //   { id: dataExist._id, userType: dataExist.userType },
+    //   "forgetPassword"
+    // );
+
     const token = await tokenGen(
       { id: dataExist._id, userType: dataExist.userType },
       "forgetPassword"
@@ -1099,11 +1132,6 @@ const resetpassword = async (req, res, next) => {
 };
 const resetExistingPassword = async (req, res, next) => {
   try {
-    // if (req.user.tokenType != "verify otp") {
-    //   return next(
-    //     CustomError.createError("First verify otp then reset password", 200)
-    //   );
-    // }
     const { error } = ResetExistingPasswordValidator.validate(req.body);
 
     if (error) {
@@ -1112,34 +1140,31 @@ const resetExistingPassword = async (req, res, next) => {
       });
     }
 
-    // const { devicetoken } = req.headers;
-
     const { email } = req.user;
     const { oldPassword, newPassword } = req.body;
-    // if (req.user.devices[req.user.devices.length - 1].deviceToken != devicetoken) {
-    //   return next(CustomError.createError("Invalid device access", 200));
-    // }
-    const user = await authModel.findOne({ email: email });
-    if (!user) {
-      return next(CustomError.createError("User not found", 400));
+    const userQuery = 'SELECT * FROM auths WHERE email = $1';
+    const userResult = await pool.query(userQuery, [email]);
+
+    if (userResult.rows.length === 0) {
+      return next(CustomError.createError('User not found', 400));
     }
-    console.log(user, "USER");
+    const user = userResult.rows[0];
 
     const isPasswordCorrect = comparePassword(oldPassword, user.password);
-    console.log(isPasswordCorrect, "isPasswordCorrect");
     if (!isPasswordCorrect) {
       return next(CustomError.createError("Old password is not correct", 400));
     }
 
-    const updateuser = await authModel.updateOne(
-      { email },
-      {
-        password: hashPassword(newPassword),
-        otp: null,
-      },
-      { new: true }
-    );
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
 
+    const updateUserQuery = `
+      UPDATE auths
+      SET password = $1, otp = NULL, "updatedAt" = CURRENT_TIMESTAMP
+      WHERE email = $2
+      RETURNING _id, email, name;
+    `;
+    const updateResult = await pool.query(updateUserQuery, [hashedPassword, email]);
+    const updatedUser = updateResult.rows[0];
     return next(
       CustomSuccess.createSuccess({}, "Password updated succesfully", 200)
     );
