@@ -12,7 +12,7 @@ import { mongoose } from "mongoose";
 import { accessTokenValidator } from "../Utils/Validator/accessTokenValidator.js";
 import NotificationController from "./NotificationController.js";
 import jwt from "jsonwebtoken";
-import format from 'pg-format';
+import format from "pg-format";
 
 import {
   LoginUserValidator,
@@ -356,7 +356,10 @@ const generateSignUpOtp = async ({ email, password, name }) => {
 const verifyProfile = async (req, res, next) => {
   try {
     const { email, otp } = req.body;
-    const userResult = await db.query('SELECT * FROM auths WHERE "email" = $1', [email]);
+    const userResult = await db.query(
+      'SELECT * FROM auths WHERE "email" = $1',
+      [email]
+    );
     const userData = userResult.rows[0];
     if (!userData) {
       return next(
@@ -366,7 +369,7 @@ const verifyProfile = async (req, res, next) => {
 
     const otpResult = await db.query(
       'SELECT * FROM Otps WHERE "auth" = $1 AND "otpUsed" = false AND "reason" = $2 LIMIT 1',
-      [userData._id, 'login']
+      [userData._id, "login"]
     );
     const findOTP = otpResult.rows[0];
 
@@ -385,7 +388,7 @@ const verifyProfile = async (req, res, next) => {
       [userData._id]
     );
     const updateUser = updateUserResult.rows[0];
-    await db.query('DELETE FROM Otps WHERE _id = $1', [findOTP._id]);
+    await db.query("DELETE FROM Otps WHERE _id = $1", [findOTP._id]);
 
     return next(
       CustomSuccess.createSuccess(
@@ -398,8 +401,6 @@ const verifyProfile = async (req, res, next) => {
     return next(CustomError.createError(error.message, 500));
   }
 };
-
-
 
 const updateUser = async (req, res, next) => {
   try {
@@ -425,13 +426,13 @@ const updateUser = async (req, res, next) => {
 
       if (user.image) {
         fs.unlinkSync(`Uploads/${user.image.file}`);
-        await pool.query(
-          "DELETE FROM file_uploads WHERE _id = $1",
-          [user.image.id]
-        );
+        await pool.query("DELETE FROM file_uploads WHERE _id = $1", [
+          user.image.id,
+        ]);
       }
 
-      const fileUploadResult = await pool.query(`INSERT INTO file_uploads (file, file_type, user_id) VALUES ($1, $2, $3) RETURNING id`,
+      const fileUploadResult = await pool.query(
+        `INSERT INTO file_uploads (file, file_type, user_id) VALUES ($1, $2, $3) RETURNING id`,
         [file.filename, file.mimetype, user.id]
       );
 
@@ -445,10 +446,13 @@ const updateUser = async (req, res, next) => {
       if (user.coverImage) {
         // Delete old cover image file if exists
         fs.unlinkSync(`Uploads/${user.coverImage.file}`);
-        await pool.query("DELETE FROM file_uploads WHERE _id = $1", [user.coverImage.id]);
+        await pool.query("DELETE FROM file_uploads WHERE _id = $1", [
+          user.coverImage.id,
+        ]);
       }
 
-      const coverImageResult = await pool.query(`INSERT INTO file_uploads (file, file_type, user_id) VALUES ($1, $2, $3) RETURNING id`,
+      const coverImageResult = await pool.query(
+        `INSERT INTO file_uploads (file, file_type, user_id) VALUES ($1, $2, $3) RETURNING id`,
         [coverImageFile.filename, coverImageFile.mimetype, user.id]
       );
       data.coverImageId = coverImageResult.rows[0].id;
@@ -460,7 +464,9 @@ const updateUser = async (req, res, next) => {
     }
 
     const updateQuery = `UPDATE auths SET "isCompleted" = true,
-    ${Object.keys(data).map((key, index) => `"${key}" = $${index + 1}`).join(", ")}
+    ${Object.keys(data)
+      .map((key, index) => `"${key}" = $${index + 1}`)
+      .join(", ")}
       WHERE _id = $${Object.keys(data).length + 1}
       RETURNING *;
     `;
@@ -473,9 +479,9 @@ const updateUser = async (req, res, next) => {
 
     const updatedUser = updatedUserResult.rows[0];
     const token = await tokenGen(
-      { _id: updatedUser._id, userType: updatedUser.userType },  // User-specific info
+      { _id: updatedUser._id, userType: updatedUser.userType }, // User-specific info
       "auth",
-      deviceToken  // Device token
+      deviceToken // Device token
     );
 
     return next(
@@ -490,7 +496,6 @@ const updateUser = async (req, res, next) => {
     next(CustomError.createError(error.message, 500));
   }
 };
-
 
 const updateUserMultipleImages = async (req, res, next) => {
   try {
@@ -507,11 +512,7 @@ const updateUserMultipleImages = async (req, res, next) => {
       RETURNING "user", "filePath", "fileType";
     `;
 
-    const values = images.map((file) => [
-      user._id,
-      file.path,
-      file.mimetype,
-    ]);
+    const values = images.map((file) => [user._id, file.path, file.mimetype]);
 
     const formattedQuery = format(query, values);
     const result = await pool.query(formattedQuery);
@@ -570,7 +571,6 @@ const LoginUser = async (req, res, next) => {
     next(CustomError.createError(error.message, 500));
   }
 };
-
 
 const SignUp = async (req, res, next) => {
   try {
@@ -798,7 +798,7 @@ const getUserIndustry = async (req, res) => {
   try {
     const userId = req.user._id;
     const query = `SELECT * FROM userindustries WHERE userid = $1`;
-    const result = await pool.query(query, [userId])
+    const result = await pool.query(query, [userId]);
 
     res.status(200).json({
       success: true,
@@ -853,8 +853,12 @@ const forgetPassword = async (req, res, next) => {
     //   return next(CustomError.badRequest("User Not Found"));
     // }
 
-    var dataExist = await pool.query('SELECT * FROM auths WHERE email = $1 AND "isDeleted" = false', [email]);
-    dataExist= dataExist.rows[0];
+    var dataExist = await pool.query(
+      'SELECT * FROM auths WHERE email = $1 AND "isDeleted" = false',
+      [email]
+    );
+    dataExist = dataExist.rows[0];
+
     if (!dataExist) {
       return next(CustomError.badRequest("User Not Found"));
     }
@@ -884,23 +888,52 @@ const forgetPassword = async (req, res, next) => {
     let otp = Math.floor(Math.random() * 90000) + 100000;
 
     // Check if OTP already exists for the user
-    const otpExist = await pool.query('SELECT * FROM otps WHERE auth = $1', [dataExist.id]);
-    
+    const otpExist = await pool.query("SELECT * FROM otps WHERE auth = $1", [
+      dataExist._id,
+    ]);
+
+    const otpBcrypt = await bcrypt.hash(otp.toString(), genSalt);
+
+
+
+    console.log("otpExist.rows.length", otpExist.rows.length);
+
     if (otpExist.rows.length > 0) {
+
+
+      // await pool.query(
+      //   'UPDATE otps SET "otpKey" = $1, "reason" = $2, "otpUsed" = false, "expireAt" = NOW() + INTERVAL \'1 hour\',"auth"=$4 WHERE _id = $3,',
+      //   [otpBcrypt, 'forgetPassword', otpExist.rows[0]._id,dataExist._id]
+      // );
+
+
+
       await pool.query(
-        'UPDATE otps SET "otpKey" = $1, "reason" = $2, "otpUsed" = false, "expireAt" = NOW() + INTERVAL \'1 hour\',"auth"=$4 WHERE _id = $3,',
-        [await bcrypt.hash(otp.toString(), genSalt), 'forgetPassword', otpExist.rows[0].id,dataExist.id]
+        `UPDATE otps 
+         SET "otpKey" = $1, 
+             "reason" = $2, 
+             "otpUsed" = false, 
+             "expireAt" = NOW() + INTERVAL '1 hour',
+             "updatedAt"=Now(),
+             "auth" = $4 
+         WHERE _id = $3`,
+        [otpBcrypt, "forgetPassword", otpExist.rows[0]._id, otpExist.rows[0]._id]
       );
+
     } else {
       const result = await pool.query(
-        'INSERT INTO otps ("otpKey", auth, "reason", "expireAt") VALUES ($1, $2, $3, NOW() + INTERVAL \'1 hour\') RETURNING _id',
-        [otp,dataExist.id, 'forgetPassword']
+        'INSERT INTO otps ("otpKey", auth, "reason", "expireAt","createdAt","updatedAt") VALUES ($1, $2, $3, NOW() + INTERVAL \'1 hour\',Now(),Now()) RETURNING _id',
+        [otpBcrypt, dataExist._id, "forgetPassword"]
       );
+
     }
 
-   // await authModel.findOneAndUpdate({ email }, { otp: otpExist._id });
+    // await authModel.findOneAndUpdate({ email }, { otp: otpExist._id });
 
-   await pool.query('UPDATE auths SET "otp" = $1 WHERE email = $2', [otpExist._id, email]);
+    await pool.query('UPDATE auths SET "otp" = $1 WHERE email = $2', [
+      otpBcrypt,
+      email,
+    ]);
 
     const emailData = {
       subject: "Aldebaran - Account Verification",
@@ -961,12 +994,7 @@ const forgetPassword = async (req, res, next) => {
       ],
     };
 
-     sendEmails(
-      email,
-      emailData.subject,
-      emailData.html,
-      emailData.attachments
-    );
+    sendEmails(email, emailData.subject, emailData.html, emailData.attachments);
 
     // const token = await tokenGen(
     //   { id: dataExist._id, userType: dataExist.userType },
@@ -977,7 +1005,6 @@ const forgetPassword = async (req, res, next) => {
       { id: dataExist._id, userType: dataExist.userType },
       "forgetPassword"
     );
-
     return next(
       CustomSuccess.createSuccess(
         { token, otp },
@@ -992,69 +1019,85 @@ const forgetPassword = async (req, res, next) => {
 
 const VerifyOtp = async (req, res, next) => {
   try {
-    if (req.user.tokenType != "forgetPassword") {
-      return next(
-        CustomError.createError("Token type is not forgot password", 200)
-      );
-    }
+    // if (req.user.tokenType != "forgetPassword") {
+    //   return next(
+    //     CustomError.createError("Token type is not forgot password", 200)
+    //   );
+    // }
 
-    const { error } = verifyOTPValidator.validate(req.body);
-    if (error) {
-      error.details.map((err) => {
-        next(CustomError.createError(err.message, 200));
-      });
-    }
+    // const { error } = verifyOTPValidator.validate(req.body);
+    // if (error) {
+    //   error.details.map((err) => {
+    //     next(CustomError.createError(err.message, 200));
+    //   });
+    // }
 
-    const { otp, deviceToken, deviceType } = req.body;
-    const { email } = req.user;
+    const { otp, deviceToken, deviceType, email } = req.body;
 
-    const user = await authModel.findOne({ email }).populate(["otp", "image"]);
+
+    // const user = await authModel.findOne({ email }).populate(["otp", "image"]);
+    // if (!user) {
+    //   return next(CustomError.createError("User not found", 200));
+    // }
+
+    const query = ` SELECT u.*, o."otpKey",o."updatedAt" as otp_updated_date
+        FROM auths u
+        LEFT JOIN otps o ON u._id = o.auth
+        WHERE u.email = $1
+      `;
+
+    const { rows } = await pool.query(query, [email]);
+
+    const user = rows[0];
     if (!user) {
       return next(CustomError.createError("User not found", 200));
     }
-    const OTP = user.otp;
-    if (!OTP || OTP.otpUsed) {
+
+    const OTP = user;
+
+    if (!otp) {
       return next(CustomError.createError("OTP not found", 200));
     }
+   
+    const userOTP = await bcrypt.hash(otp.toString().replace(/,/g, ""), genSalt);
+    
 
-    const userOTP = await bcrypt.hash(otp, genSalt);
-
-    if (OTP.otpKey !== userOTP) {
+    if (OTP.otp !== userOTP) {
       return next(CustomError.createError("Invalid OTP", 200));
     }
 
     const currentTime = new Date();
-    const OTPTime = OTP.updatedAt;
+    const OTPTime = OTP.otp_updated_date;
     const diff = currentTime.getTime() - OTPTime.getTime();
     const minutes = Math.floor(diff / 1000 / 60);
     if (minutes > 60) {
       return next(CustomError.createError("OTP expired", 200));
     }
-    const device = await linkUserDevice(user._id, deviceToken, deviceType);
-    if (device.error) {
-      return next(CustomError.createError(device.error, 200));
-    }
+    // const device = await linkUserDevice(user._id, deviceToken, deviceType);
+    // if (device.error) {
+    //   return next(CustomError.createError(device.error, 200));
+    // }
     const token = await tokenGen(user, "verify otp", deviceToken);
 
-    const bulkOps = [];
-    const update = { otpUsed: true, otpKey: null };
+    // const bulkOps = [];
+    // const update = { otpUsed: true, otpKey: null };
     // let  userUpdate ;
-    if (OTP._doc.reason !== "forgetPassword") {
-      bulkOps.push({
-        deleteOne: {
-          filter: { _id: OTP._id },
-        },
-      });
-      // userUpdate.OTP = null;
-    } else {
-      bulkOps.push({
-        updateOne: {
-          filter: { _id: OTP._id },
-          update: { $set: update },
-        },
-      });
-    }
-    OtpModel.bulkWrite(bulkOps);
+    // if (OTP.deviceType !== "forgetPassword") {
+    //   bulkOps.push({
+    //     deleteOne: {
+    //       filter: { _id: OTP._id },
+    //     },
+    //   });
+    //   // userUpdate.OTP = null;
+    // } else {
+    //   bulkOps.push({
+    //     updateOne: {
+    //       filter: { _id: OTP._id },
+    //       update: { $set: update },
+    //     },
+    //   });
+    // }
+    // OtpModel.bulkWrite(bulkOps);
     // AuthModel.updateOne({ identifier: user.identifier }, { $set: userUpdate });
     // user.profile._doc.userType = user.userType;
     // const profile = { ...user.profile._doc, token };
@@ -1062,7 +1105,7 @@ const VerifyOtp = async (req, res, next) => {
 
     return next(
       CustomSuccess.createSuccess(
-        { ...user._doc, token },
+        { ...user, token },
         "OTP verified successfully",
         200
       )
@@ -1138,11 +1181,11 @@ const resetExistingPassword = async (req, res, next) => {
 
     const { email } = req.user;
     const { oldPassword, newPassword } = req.body;
-    const userQuery = 'SELECT * FROM auths WHERE email = $1';
+    const userQuery = "SELECT * FROM auths WHERE email = $1";
     const userResult = await pool.query(userQuery, [email]);
 
     if (userResult.rows.length === 0) {
-      return next(CustomError.createError('User not found', 400));
+      return next(CustomError.createError("User not found", 400));
     }
     const user = userResult.rows[0];
 
@@ -1159,7 +1202,10 @@ const resetExistingPassword = async (req, res, next) => {
       WHERE email = $2
       RETURNING _id, email, name;
     `;
-    const updateResult = await pool.query(updateUserQuery, [hashedPassword, email]);
+    const updateResult = await pool.query(updateUserQuery, [
+      hashedPassword,
+      email,
+    ]);
     const updatedUser = updateResult.rows[0];
     return next(
       CustomSuccess.createSuccess({}, "Password updated succesfully", 200)
@@ -1184,6 +1230,31 @@ const logout = async (req, res, next) => {
     return next(CustomError.createError(error.message, 200));
   }
 };
+const updatePassword = async (req,res,next) => {
+  try {
+    const { email } = req.user;
+    let { password } = req.body;
+    if (password) {
+      password = hashPassword(password);
+    }
+
+    const query = `UPDATE auths SET password = $1 WHERE email = $2 RETURNING *`;
+    const values = [password, email];
+
+    const result = await pool.query(query, values);
+
+    if (result.rows.length > 0) {
+      return next(
+        CustomSuccess.createSuccess('Password updated successfully for:', email, 200)
+      );
+    } else {
+      console.log('Email not found');
+      return { success: false, message: 'Email not found' };
+    }
+  } catch (error) {
+    return next(CustomError.createError(error.message, 200));
+  }
+}
 const AuthController = {
   completeProfile,
   verifyProfile,
@@ -1213,6 +1284,7 @@ const AuthController = {
   logout,
   SocialLoginUser,
   getCompanies,
+  updatePassword
 };
 
 export default AuthController;

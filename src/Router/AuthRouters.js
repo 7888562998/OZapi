@@ -36,6 +36,7 @@ AuthRouters.prefix("/user", AuthMiddleware, async function () {
   AuthRouters.route("/managers/:companyId").get(AuthController.getComapnyManager); 
   AuthRouters.route("/resetpassword").post(AuthController.resetpassword);     
   AuthRouters.route("/Verify").post(AuthController.VerifyOtp);
+  AuthRouters.route("/updatePassword").post(AuthController.updatePassword);
   AuthRouters.route("/logout").post(AuthController.logout);
   AuthRouters.route("/resetExistingPassword").post(AuthController.resetExistingPassword);   
  AuthRouters.route("/createsubactivity").post(ActivityController.createActivityforCase);  
