@@ -854,7 +854,7 @@ const forgetPassword = async (req, res, next) => {
     // }
 
     var dataExist = await pool.query(
-      'SELECT * FROM auths WHERE email = $1 AND "isDeleted" = false',
+      'SELECT * FROM auths WHERE email = $1',
       [email]
     );
     dataExist = dataExist.rows[0];
@@ -913,11 +913,9 @@ const forgetPassword = async (req, res, next) => {
          SET "otpKey" = $1, 
              "reason" = $2, 
              "otpUsed" = false, 
-             "expireAt" = NOW() + INTERVAL '1 hour',
-             "updatedAt"=Now(),
-             "auth" = $4 
+             "updatedAt"=Now()
          WHERE _id = $3`,
-        [otpBcrypt, "forgetPassword", otpExist.rows[0]._id, otpExist.rows[0]._id]
+        [otpBcrypt, "forgetPassword", otpExist.rows[0]._id]
       );
 
     } else {
@@ -1040,7 +1038,7 @@ const VerifyOtp = async (req, res, next) => {
     //   return next(CustomError.createError("User not found", 200));
     // }
 
-    const query = ` SELECT u.*, o."otpKey",o."updatedAt" as otp_updated_date
+    const query = `SELECT u.*, o."otpKey",o."updatedAt" as otp_updated_date
         FROM auths u
         LEFT JOIN otps o ON u._id = o.auth
         WHERE u.email = $1
